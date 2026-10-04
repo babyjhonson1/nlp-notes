@@ -1,0 +1,103 @@
+/* Иллюстрация раздела rag/lexical-search (префикс классов: lex). */
+
+.lex-stage {
+  min-height: 310px;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+.lex-query {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 9px;
+}
+.lex-query > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.lex-query > b { color: var(--ink); font-size: 14px; }
+.lex-query > small { color: var(--muted); margin-left: auto; }
+.lex-docs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.lex-doc {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 8px;
+  align-items: center;
+  border: 1px solid var(--rule);
+  border-radius: 7px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--fig-accent) 4%, var(--bg));
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.lex-doc > b {
+  grid-row: 1 / 4;
+  align-self: stretch;
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  border-right: 1px solid var(--rule);
+  color: var(--ink);
+  font-size: 16px;
+}
+.lex-dot,
+.lex-key {
+  display: inline-block;
+  border-radius: 3px;
+  background: var(--gc);
+}
+.lex-dot { width: 7px; height: 7px; margin-right: 5px; }
+.lex-key { width: 18px; height: 11px; border: 1px solid color-mix(in srgb, var(--gc) 72%, var(--ink)); }
+.lex-dot.rare,
+.lex-key.rare,
+.lex-bar .rare { --gc: var(--g1); background: var(--g1); }
+.lex-dot.common,
+.lex-key.common,
+.lex-bar .common { --gc: var(--g3); background: var(--g3); }
+.lex-ranking { display: grid; gap: 9px; }
+.lex-rank-row {
+  display: grid;
+  grid-template-columns: 22px 22px minmax(0, 1fr) 46px;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+.lex-rank {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--chapter) 12%, var(--bg));
+  color: var(--chapter);
+  font-size: 11px;
+  font-weight: 600;
+}
+.lex-doc-id { color: var(--ink); }
+.lex-rank-row > strong { color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+.lex-bar {
+  display: flex;
+  height: 20px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--rule) 55%, transparent);
+}
+.lex-bar i { display: block; height: 100%; transition: width 160ms ease; }
+
+@media (max-width: 560px) {
+  .lex-stage { min-height: 410px; }
+  .lex-query { flex-wrap: wrap; }
+  .lex-query > small { width: 100%; margin-left: 0; }
+  .lex-docs { grid-template-columns: 1fr; }
+  .lex-doc { grid-template-columns: 34px repeat(3, minmax(0, 1fr)); }
+  .lex-doc > b { grid-row: auto; border-right: 1px solid var(--rule); }
+}
