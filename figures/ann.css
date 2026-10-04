@@ -1,0 +1,36 @@
+/* Иллюстрации раздела rag/ann (префиксы классов: pq, adc, sl, tleaf и общие .fig-классы) */
+
+/* Схема PQ */
+.pq { display: grid; gap: 14px; }
+.pq-label { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.pq-vec { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.pq-sub { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; border-radius: 6px; overflow: hidden; }
+.pq-sub span {
+  padding: 7px 2px; text-align: center; font-size: 13px; font-variant-numeric: tabular-nums;
+  background: color-mix(in srgb, var(--gc) 14%, var(--bg));
+  color: var(--ink);
+}
+.pq-cb {
+  border: 1px dashed color-mix(in srgb, var(--gc) 55%, var(--rule));
+  border-radius: 6px;
+  padding: 6px 4px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.35;
+}
+.pq-cb b { display: block; color: var(--gc); font-weight: 600; font-size: 13px; }
+.pq-code span {
+  display: block; padding: 7px 2px; text-align: center; border-radius: 6px;
+  font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums;
+  background: var(--gc); color: var(--fig-on-hit);
+}
+.pq-arrow { text-align: center; color: var(--muted); font-size: 13px; line-height: 1; }
+.pq-sum { font-size: 14px; color: var(--muted); }
+.pq-sum b { color: var(--ink); font-weight: 600; }
+.content .adc { border-collapse: separate; border-spacing: 3px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.content .adc th { font-weight: 500; color: var(--muted); padding: 2px 6px; text-align: center; border: 0; }
+.content .adc td { padding: 5px 7px; text-align: center; border-radius: 4px; background: var(--rail); border: 0; color: var(--muted); }
+.content .adc td.gap { background: transparent; }
+.content .adc td.pick { background: var(--gc); color: var(--fig-on-hit); font-weight: 600; }
+.content .adc th.row { color: var(--gc); text-align: left; font-weight: 600; }

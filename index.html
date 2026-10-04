@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<!-- Правила для редакторов (людей и агентов) — в AGENTS.md. Новые иллюстрации подключаются
+     в двух местах ниже: стили в блоке «Иллюстрации: стили», код в блоке «Иллюстрации: код». -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Конспекты по NLP</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📓</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400;7..72,600&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+  // Формулы: LaTeX, \( ... \) строчные и \[ ... \] выносные. Рендер MathJax 3, SVG.
+  document.documentElement.classList.add("mj-wait");
+  setTimeout(() => document.documentElement.classList.remove("mj-wait"), 3000);
+  window.MathJax = {
+    tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["\\[", "\\]"]], processEscapes: true },
+    svg: { fontCache: "global", mtextInheritFont: true },
+    options: {
+      enableMenu: false,
+      skipHtmlTags: ["script", "noscript", "style", "textarea", "pre", "code", "annotation", "annotation-xml", "svg"]
+    },
+    startup: {
+      typeset: false,
+      ready() {
+        MathJax.startup.defaultReady();
+        MathJax.startup.promise.then(() => { window.__mjReady = true; if (window.onMathJaxReady) window.onMathJaxReady(); });
+      }
+    }
+  };
+</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js" onerror="document.documentElement.classList.remove('mj-wait')"></script>
+<link rel="stylesheet" href="assets/site.css">
+<!-- Иллюстрации: стили -->
+<link rel="stylesheet" href="figures/ann.css">
+<link rel="stylesheet" href="figures/cb.css">
+<link rel="stylesheet" href="figures/vl.css">
+</head>
+<body>
+<div class="app">
+  <nav class="chapters" id="chapters" aria-label="Главы">
+    <div class="chapters-head">
+      <a class="brand" href="#/">Конспекты по NLP</a>
+      <button class="toggle" id="toggle-chapters" type="button" aria-controls="chapter-list">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.5 5 7.5 10l5 5"/></svg>
+      </button>
+    </div>
+    <ul class="chapter-list" id="chapter-list"></ul>
+  </nav>
+
+  <nav class="sections" id="sections" aria-label="Разделы главы">
+    <div class="sections-head">
+      <div class="sections-title">
+        <h2 id="chapter-title"></h2>
+        <p id="chapter-count"></p>
+      </div>
+      <button class="toggle" id="toggle-sections" type="button" aria-controls="section-list">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.5 5 7.5 10l5 5"/></svg>
+      </button>
+    </div>
+    <ul class="section-list" id="section-list"></ul>
+    <div class="sections-rail" id="sections-rail" aria-hidden="true"></div>
+  </nav>
+
+  <main class="page" id="page">
+    <article class="page-inner">
+      <p class="crumb" id="crumb"></p>
+      <h1 id="section-title"></h1>
+      <div id="section-body"></div>
+      <nav class="pager" id="pager" aria-label="Соседние разделы"></nav>
+    </article>
+  </main>
+</div>
+
+<script defer src="assets/core.js"></script>
+<!-- Иллюстрации: код (common.js первым) -->
+<script defer src="figures/common.js"></script>
+<script defer src="figures/ann.js"></script>
+<script defer src="figures/cb.js"></script>
+<script defer src="figures/vl.js"></script>
+<script defer src="assets/site.js"></script>
+</body>
+</html>

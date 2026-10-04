@@ -1,0 +1,87 @@
+{
+  "title": "Конспекты по NLP",
+  "chapters": [
+    {
+      "id": "rag",
+      "title": "RAG",
+      "color": "#2E6E73",
+      "sections": [
+        {
+          "id": "what-is-rag",
+          "title": "Что такое RAG и зачем он нужен",
+          "status": "empty",
+          "summary": "Вводный раздел главы: какие ограничения LLM решает RAG (устаревшие знания, галлюцинации, нет доступа к приватным данным), общая схема «найти — добавить в контекст — сгенерировать» и чем RAG отличается от дообучения.",
+          "concepts": [
+            "RAG",
+            "retrieval",
+            "галлюцинации",
+            "knowledge cutoff",
+            "RAG vs fine-tuning"
+          ]
+        },
+        {
+          "id": "ann",
+          "title": "ANN: приближённый поиск ближайших соседей",
+          "status": "done",
+          "summary": "Как ретривер быстро находит ближайшие эмбеддинги среди миллионов: постановка задачи и recall@k, точный перебор, деревья (KD-tree, Annoy), LSH, IVF, квантизация (SQ, PQ, IVF-PQ), графовые индексы NSW/HNSW и DiskANN; как выбрать метод и как ANN применяется в RAG.",
+          "concepts": [
+            "ANN",
+            "recall@k",
+            "Annoy",
+            "LSH",
+            "IVF",
+            "product quantization",
+            "HNSW",
+            "DiskANN"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inference",
+      "title": "Инференс LLM",
+      "color": "#55609E",
+      "sections": [
+        {
+          "id": "continuous-batching",
+          "title": "Continuous batching",
+          "status": "done",
+          "summary": "Как сервер LLM обслуживает поток запросов: фазы prefill и decode, почему decode упирается в пропускную способность памяти, простои статического батчинга, continuous batching с планированием на каждом шаге, плоский батч, chunked prefill, память под KV-cache и вытеснение, движки vLLM, SGLang, TensorRT-LLM, TGI.",
+          "concepts": [
+            "prefill",
+            "decode",
+            "static batching",
+            "continuous batching",
+            "chunked prefill",
+            "KV-cache",
+            "PagedAttention",
+            "vLLM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "multimodal",
+      "title": "Мультимодальные LLM",
+      "color": "#9A5B2E",
+      "sections": [
+        {
+          "id": "images",
+          "title": "Как LLM видит картинки",
+          "status": "done",
+          "summary": "Как картинка попадает в LLM: ViT режет её на патчи и превращает в визуальные токены, контрастивное предобучение CLIP/SigLIP связывает признаки с языком, проектор переводит их в пространство эмбеддингов LLM (LLaVA). Разобраны двухэтапное обучение, сжатие токенов (Q-Former, Perceiver Resampler, слияние 2 × 2), альтернативные схемы — cross-attention (Flamingo, Llama 3.2 Vision) и ранний синтез (Chameleon), высокое разрешение (AnyRes, нативное разрешение Qwen2-VL, M-RoPE), типичные ошибки VLM и запуск на практике.",
+          "concepts": [
+            "ViT",
+            "CLIP / SigLIP",
+            "проектор",
+            "LLaVA",
+            "visual instruction tuning",
+            "cross-attention",
+            "AnyRes",
+            "M-RoPE"
+          ]
+        }
+      ]
+    }
+  ]
+}

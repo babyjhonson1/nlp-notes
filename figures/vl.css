@@ -1,0 +1,91 @@
+/* ---------- Иллюстрации: мультимодальные LLM ---------- */
+:root {
+  --vl-img: var(--g3); --vl-txt: var(--g1); --vl-ans: var(--g2);
+  --vl-pos: #C2662F; --vl-neg: #3D6DB3;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --vl-pos: #E59A6A; --vl-neg: #86A9E6; }
+}
+:root[data-theme="dark"] { --vl-pos: #E59A6A; --vl-neg: #86A9E6; }
+.vl-scroll { overflow-x: auto; overflow-y: hidden; }
+@media (max-width: 600px) { .vl-scroll svg { min-width: 560px; } }
+.fig .vl-cap { fill: var(--muted); font-size: 12px; }
+.fig .vl-cap-b { fill: var(--ink); font-weight: 600; }
+.fig .vl-sub { font-size: 9px; }
+.fig .vl-formula { fill: var(--ink); font-size: 12.5px; }
+.fig .vl-num-on { fill: #fff; font-size: 10px; font-weight: 600; paint-order: stroke; stroke: rgba(20, 24, 32, 0.55); stroke-width: 2.6px; }
+.fig .vl-grid { stroke: #fff; stroke-width: 1.6; opacity: 0.9; }
+.fig .vl-grid.thin { stroke-width: 0.5; opacity: 0.6; }
+.fig .vl-pxgrid { stroke: rgba(255, 255, 255, 0.55); stroke-width: 0.8; }
+.fig .vl-pxbox { fill: none; stroke: var(--rule); stroke-width: 1; }
+.fig .vl-sel { fill: none; stroke: var(--ink); stroke-width: 2.6; }
+.fig .vl-dim { fill: var(--bg); }
+.fig .vl-att { fill: var(--chapter); }
+.fig .vl-cellb { stroke: none; }
+.fig .vl-cellt { fill: var(--ink); font-size: 9.5px; text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+.fig .vl-cellt.on { fill: #fff; font-weight: 600; }
+.fig .vl-cls { fill: var(--fig-node); }
+.fig .vl-cls + .vl-cellt { fill: var(--fig-on-node); font-weight: 600; }
+.fig .vl-arc { fill: none; stroke: var(--chapter-ink); stroke-linecap: round; }
+.fig line.vl-arr { stroke: var(--muted); stroke-width: 1.3; }
+.fig line.vl-arr.on { stroke: var(--chapter-ink); stroke-width: 2.2; }
+.fig line.vl-arr.acc { stroke: var(--vl-img); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.fig path.vl-head { fill: var(--muted); stroke: none; }
+.fig path.vl-head.on { fill: var(--chapter-ink); }
+.fig path.vl-head.acc { fill: var(--vl-img); }
+.fig line.vl-grad { stroke: var(--chapter-ink); stroke-width: 2; }
+.fig path.vl-grad.vl-head { fill: var(--chapter-ink); }
+/* CLIP */
+.fig .vl-circle { fill: none; stroke: var(--rule); stroke-width: 1.5; }
+.fig .vl-pairline { stroke-width: 1.4; stroke-dasharray: 3 3; opacity: 0.85; }
+.fig .vl-ci { fill: color-mix(in srgb, var(--gc) 20%, var(--bg)); stroke: var(--gc); stroke-width: 2; }
+.fig .vl-emoji { font-size: 15px; text-anchor: middle; dominant-baseline: central; }
+.fig .vl-word { font-size: 12px; font-weight: 600; dominant-baseline: central; }
+.fig .vl-mcell { fill: var(--chapter); }
+.fig .vl-mval { fill: var(--ink); font-size: 12.5px; font-weight: 600; text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+.fig .vl-msim { fill: var(--muted); font-size: 9.5px; text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+.fig .vl-mval.on { fill: #fff; }
+.fig .vl-msim.on { fill: rgba(255, 255, 255, 0.82); }
+.fig .vl-diag { fill: none; stroke: var(--ink); stroke-width: 1.8; }
+/* схемы */
+.fig .vl-box { fill: var(--bg); stroke: var(--fig-edge); stroke-width: 1.2; }
+.fig .vl-box.on { fill: var(--tint); stroke: var(--chapter-ink); stroke-width: 2.2; }
+.fig .vl-box.new { fill: color-mix(in srgb, var(--chapter) 14%, var(--bg)); stroke: var(--chapter-ink); stroke-width: 1.4; stroke-dasharray: 5 3; }
+.fig .vl-boxt { fill: var(--ink); font-size: 13px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+.fig .vl-boxs { fill: var(--muted); font-size: 11px; text-anchor: middle; dominant-baseline: central; }
+.fig .vl-mat { fill: color-mix(in srgb, var(--vl-img) 20%, var(--bg)); stroke: var(--vl-img); stroke-width: 1.4; }
+.fig .vl-matl { stroke: color-mix(in srgb, var(--vl-img) 40%, transparent); stroke-width: 0.8; }
+.fig .vl-layer { fill: color-mix(in srgb, var(--ink) 6%, var(--bg)); stroke: var(--rule); stroke-width: 1; }
+.fig .vl-chip { stroke-width: 1.2; }
+.fig .vl-chip.t { fill: color-mix(in srgb, var(--vl-txt) 12%, var(--bg)); stroke: color-mix(in srgb, var(--vl-txt) 60%, var(--rule)); }
+.fig .vl-chip.img { fill: color-mix(in srgb, var(--vl-img) 16%, var(--bg)); stroke: var(--vl-img); }
+.fig .vl-chip.on { stroke: var(--chapter-ink); stroke-width: 2.6; }
+.fig .vl-chipt { fill: var(--ink); font-size: 11px; text-anchor: middle; dominant-baseline: central; }
+.fig .vl-chipt.img { fill: var(--vl-img); font-weight: 600; }
+.fig .vl-chipt.on-tok { fill: var(--fig-on-hit); font-weight: 500; }
+.fig .vl-tok { stroke: none; }
+.fig .vl-tok.img { fill: var(--vl-img); }
+.fig .vl-tok.t { fill: var(--vl-txt); }
+.fig .vl-tok.ans { fill: var(--vl-ans); }
+.fig .vl-tok.new { stroke: var(--ink); stroke-width: 2; }
+.fig .vl-badge { fill: var(--bg); opacity: 0.92; }
+.fig .vl-badget { fill: var(--vl-img); font-size: 10px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+.fig .vl-flow { fill: none; stroke: var(--fig-edge); stroke-width: 1.4; stroke-dasharray: 4 3; }
+.fig .vl-flow.on { stroke: var(--chapter-ink); stroke-width: 2; }
+.fig .vl-flow.thin { stroke-width: 1; }
+.fig .vl-lbl { fill: var(--muted); font-size: 10.5px; text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+.fig .vl-lbl.ans { fill: var(--vl-ans); font-weight: 600; }
+.fig .vl-m { stroke: none; }
+.fig .vl-m.t { fill: var(--vl-txt); }
+.fig .vl-m.img { fill: var(--vl-img); }
+.fig .vl-m.ans { fill: var(--vl-ans); }
+.fig .vl-m.none { fill: none; stroke: var(--rule); stroke-width: 1; }
+.fig .vl-m.old { opacity: 0.4; }
+.fig .vl-mframe { fill: none; stroke: var(--rule); stroke-width: 1; }
+/* разрешение */
+.fig .vl-pad { stroke: none; }
+.fig .vl-tile { stroke: var(--chapter-ink); stroke-width: 2.6; }
+.fig .vl-tilet { fill: #fff; font-size: 12px; font-weight: 600; paint-order: stroke; stroke: rgba(20, 24, 32, 0.6); stroke-width: 3px; }
+.fig .vl-pgrid { stroke: rgba(25, 30, 40, 0.5); stroke-width: 0.8; }
+.fig .vl-pgrid.faint { stroke: rgba(25, 30, 40, 0.28); stroke-width: 0.6; }
+.vl-cands table { margin-top: 2px; }
