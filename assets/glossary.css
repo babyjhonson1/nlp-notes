@@ -86,10 +86,10 @@
   max-width: 370px;
 }
 .glossary-formula {
+  /* Карточка растягивается на всю ширину формулы; если не хватает экрана,
+     формула сжимается (fitGlossaryFormula), а не прокручивается. */
   width: max-content;
-  max-width: calc(100vw - 56px);
   margin: 10px 0;
-  overflow-x: auto;
   text-align: center;
   font-size: 15px;
 }
@@ -116,5 +116,4 @@
     padding: 13px 14px 12px;
     font-size: 13.5px;
   }
-  .glossary-formula { font-size: 14px; }
 }

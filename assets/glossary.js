@@ -37,7 +37,10 @@ function ensureGlossaryPopup() {
   document.body.append(glossaryPopup);
 
   glossaryPopup.addEventListener("pointerenter", cancelGlossaryClose);
-  glossaryPopup.addEventListener("pointerleave", scheduleGlossaryClose);
+  glossaryPopup.addEventListener("pointerleave", (event) => {
+    // при касании pointerleave приходит после каждого жеста; карточку закрывает тап вне неё
+    if (event.pointerType !== "touch") scheduleGlossaryClose();
+  });
   glossaryPopup.addEventListener("focusin", cancelGlossaryClose);
   glossaryPopup.addEventListener("focusout", (event) => {
     if (!glossaryPopup.contains(event.relatedTarget) && event.relatedTarget !== glossaryActiveTerm) {
@@ -81,6 +84,22 @@ function positionGlossary(term) {
   );
 }
 
+// Формула показывается целиком: если она шире доступного места, уменьшаем её кегль
+// (SVG MathJax масштабируется вместе с font-size), чтобы не было горизонтальной прокрутки.
+function fitGlossaryFormula() {
+  const formula = glossaryPopup?.querySelector(".glossary-formula");
+  if (!formula) return;
+  formula.style.fontSize = "";
+  const style = getComputedStyle(glossaryPopup);
+  const available = window.innerWidth - 24 -
+    parseFloat(style.paddingLeft) - parseFloat(style.paddingRight) -
+    parseFloat(style.borderLeftWidth) - parseFloat(style.borderRightWidth);
+  const natural = formula.getBoundingClientRect().width;
+  if (natural > available) {
+    formula.style.fontSize = (parseFloat(getComputedStyle(formula).fontSize) * available / natural) + "px";
+  }
+}
+
 function openGlossary(term) {
   const entry = GLOSSARY[term.dataset.term];
   if (!entry) return;
@@ -112,7 +131,10 @@ function openGlossary(term) {
 
   if (typeof typesetMath === "function") {
     typesetMath([popup]).then(() => {
-      if (glossaryActiveTerm === term && !popup.hidden) positionGlossary(term);
+      if (glossaryActiveTerm === term && !popup.hidden) {
+        fitGlossaryFormula();
+        positionGlossary(term);
+      }
     });
   }
 }
@@ -143,7 +165,9 @@ function mountGlossaryTerms(root) {
     term.setAttribute("aria-controls", "glossary-popover");
     term.setAttribute("aria-expanded", "false");
     term.addEventListener("pointerenter", () => openGlossary(term));
-    term.addEventListener("pointerleave", scheduleGlossaryClose);
+    term.addEventListener("pointerleave", (event) => {
+      if (event.pointerType !== "touch") scheduleGlossaryClose();
+    });
     term.addEventListener("focus", () => openGlossary(term));
     term.addEventListener("blur", (event) => {
       if (!glossaryPopup?.contains(event.relatedTarget)) scheduleGlossaryClose();
@@ -170,5 +194,7 @@ document.addEventListener("scroll", (event) => {
   closeGlossary();
 }, true);
 window.addEventListener("resize", () => {
-  if (glossaryActiveTerm) positionGlossary(glossaryActiveTerm);
+  if (!glossaryActiveTerm) return;
+  fitGlossaryFormula();
+  positionGlossary(glossaryActiveTerm);
 });
