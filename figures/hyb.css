@@ -1,0 +1,95 @@
+/* Иллюстрация раздела rag/hybrid-search (префикс классов: hyb). */
+
+.hyb-stage {
+  min-height: 330px;
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+.hyb-lists {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.hyb-list,
+.hyb-fused { display: grid; gap: 4px; align-content: start; }
+.hyb-cap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 38px 58px;
+  gap: 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.hyb-cap > span { color: var(--muted); font-size: 11px; font-weight: 400; text-align: right; }
+.hyb-fused .hyb-cap { grid-template-columns: 1fr; }
+
+.hyb-item,
+.hyb-row {
+  display: grid;
+  gap: 6px;
+  align-items: center;
+  border-radius: 5px;
+  padding: 4px 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.hyb-item { grid-template-columns: 18px 14px minmax(0, 1fr) 30px 58px; }
+.hyb-row { grid-template-columns: 18px 14px minmax(0, 0.9fr) minmax(0, 1fr) 62px; }
+.hyb-item b,
+.hyb-row b { color: var(--ink); font-size: 13px; }
+.hyb-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hyb-score,
+.hyb-add,
+.hyb-row strong { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hyb-add { color: var(--hc); font-weight: 600; }
+.hyb-row strong { color: var(--ink); font-weight: 600; }
+.hyb-rank {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--chapter) 12%, var(--bg));
+  color: var(--chapter);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.hyb-row.zero .hyb-rank { background: transparent; }
+.hyb-row.zero { opacity: 0.55; }
+
+.hyb-list.lex, .hyb-bar .lex, .hyb-key.lex { --hc: var(--g1); }
+.hyb-list.dense, .hyb-bar .dense, .hyb-key.dense { --hc: var(--g3); }
+.hyb-item.done { background: color-mix(in srgb, var(--hc) 7%, var(--bg)); color: var(--ink); }
+.hyb-item.cur { box-shadow: inset 0 0 0 1.5px var(--fig-accent); }
+
+.hyb-bar {
+  display: flex;
+  height: 14px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--rule) 55%, transparent);
+}
+.hyb-bar i { display: block; height: 100%; background: var(--hc); transition: width 200ms ease; }
+.hyb-key {
+  display: inline-block;
+  width: 18px;
+  height: 11px;
+  border-radius: 3px;
+  background: var(--hc);
+}
+.hyb-key.cur { background: transparent; box-shadow: inset 0 0 0 1.5px var(--fig-accent); }
+
+@media (max-width: 560px) {
+  .hyb-stage { min-height: 360px; }
+  .hyb-lists { gap: 8px; }
+  .hyb-list .hyb-title { display: none; }
+  .hyb-item { grid-template-columns: 18px 14px minmax(0, 1fr); }
+  .hyb-cap { grid-template-columns: minmax(0, 1fr) 54px; }
+  .hyb-cap > span:first-of-type,
+  .hyb-score { display: none; }
+  .hyb-row { grid-template-columns: 18px 14px minmax(0, 1fr) 56px; }
+  .hyb-row .hyb-title { display: none; }
+}
