@@ -41,10 +41,10 @@ function mountFigures(root){
 
 
 function route() {
-  const [cId, sId] = location.hash.replace(/^#\/?/, "").split("/");
+  const [cId, sId, anchor] = location.hash.replace(/^#\/?/, "").split("/");
   const chapter = NOTEBOOK.chapters.find((c) => c.id === cId) || NOTEBOOK.chapters[0];
   const section = chapter.sections.find((s) => s.id === sId) || chapter.sections[0] || null;
-  return { chapter, section };
+  return { chapter, section, anchor };
 }
 
 /* ---------- Формулы: MathJax ---------- */
@@ -73,14 +73,18 @@ function watchSay(root) {
 }
 window.onMathJaxReady = () => {
   mjReady = true;
-  typesetMath([$("section-body")]).then(() => document.documentElement.classList.remove("mj-wait"));
+  const targets = [$("section-body")];
+  const glossary = document.querySelector(".glossary-popover:not([hidden])");
+  if (glossary) targets.push(glossary);
+  typesetMath(targets).then(() => document.documentElement.classList.remove("mj-wait"));
 };
 if (window.__mjReady) window.onMathJaxReady();
 
 let renderSeq = 0;
 async function render() {
   const seq = ++renderSeq;
-  const { chapter, section } = route();
+  const { chapter, section, anchor } = route();
+  if (typeof closeGlossary === "function") closeGlossary();
   document.documentElement.style.setProperty("--chapter", chapter.color);
 
   // Главы
@@ -121,8 +125,13 @@ async function render() {
     ? `<div class="content">${html}</div>`
     : `<div class="empty"><strong>Конспект ещё не написан</strong>Материал этого раздела появится здесь.</div>`;
   mountFigures(body);
+  if (typeof mountGlossaryTerms === "function") mountGlossaryTerms(body);
   watchSay(body);
-  typesetMath([body]);
+  typesetMath([body]).then(() => {
+    if (seq !== renderSeq || !anchor) return;
+    const target = document.getElementById(anchor);
+    if (target) target.scrollIntoView({ block: "start" });
+  });
 
   // Предыдущий / следующий раздел
   const i = chapter.sections.indexOf(section);

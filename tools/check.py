@@ -104,6 +104,9 @@ for f in fig_js:
 
 # ---------- тексты разделов ----------
 h2_ids_global = {}
+glossary_path = ROOT / "assets" / "glossary.js"
+glossary_src = glossary_path.read_text(encoding="utf-8") if glossary_path.exists() else ""
+glossary_keys = set(re.findall(r"^\s{2}([a-z][a-z0-9-]*):\s*\{", glossary_src, flags=re.M))
 sections_dir = ROOT / "sections"
 existing = {str(p.relative_to(sections_dir))[:-5]: p for p in sections_dir.rglob("*.html")} if sections_dir.exists() else {}
 
@@ -180,8 +183,20 @@ for key, status in expected_files.items():
         if "<figcaption" not in inner:
             err(where, f"у иллюстрации {name} нет <figcaption>")
 
+    # всплывающие определения
+    for m in re.finditer(r"<([a-z]+)\b[^>]*\bdata-term=\"([^\"]+)\"[^>]*>", text):
+        tag, term = m.group(1), m.group(2)
+        if tag != "button":
+            err(where, f"термин data-term=\"{term}\" должен быть размечен кнопкой")
+        if term not in glossary_keys:
+            err(where, f"для data-term=\"{term}\" нет записи в assets/glossary.js")
+
 # ---------- код иллюстраций ----------
 index_html = (ROOT / "index.html").read_text(encoding="utf-8")
+if 'src="assets/glossary.js"' not in index_html:
+    err("index.html", "не подключён assets/glossary.js")
+if 'href="assets/glossary.css"' not in index_html:
+    err("index.html", "не подключён assets/glossary.css")
 for f in fig_js:
     rel = f"figures/{f.name}"
     if f'src="{rel}"' not in index_html:

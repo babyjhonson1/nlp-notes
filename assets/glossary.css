@@ -1,0 +1,115 @@
+/* Всплывающие определения выбранных терминов. */
+
+.term-ref {
+  appearance: none;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px dotted currentColor;
+  border-radius: 0;
+  background: transparent;
+  color: var(--chapter-ink);
+  font: inherit;
+  line-height: inherit;
+  vertical-align: baseline;
+  cursor: help;
+}
+.term-ref:hover,
+.term-ref[aria-expanded="true"] {
+  border-bottom-style: solid;
+}
+
+.glossary-popover {
+  --glossary-arrow-x: 50%;
+  position: fixed;
+  z-index: 1000;
+  width: min(370px, calc(100vw - 24px));
+  padding: 15px 16px 14px;
+  border: 1px solid var(--tint-rule);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--ink);
+  box-shadow: 0 12px 36px color-mix(in srgb, #000 22%, transparent);
+  font-family: var(--ui);
+  font-size: 14px;
+  line-height: 1.48;
+}
+.glossary-popover[hidden] { display: none; }
+.glossary-popover::before,
+.glossary-popover::after {
+  content: "";
+  position: absolute;
+  left: var(--glossary-arrow-x);
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+}
+.glossary-popover[data-placement="top"]::before {
+  top: 100%;
+  border-top-color: var(--tint-rule);
+}
+.glossary-popover[data-placement="top"]::after {
+  top: calc(100% - 1px);
+  border-top-color: var(--bg);
+}
+.glossary-popover[data-placement="bottom"]::before {
+  bottom: 100%;
+  border-bottom-color: var(--tint-rule);
+}
+.glossary-popover[data-placement="bottom"]::after {
+  bottom: calc(100% - 1px);
+  border-bottom-color: var(--bg);
+}
+.glossary-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 9px;
+  margin-bottom: 7px;
+}
+.glossary-head strong {
+  color: var(--chapter-ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+.glossary-head span {
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.glossary-definition,
+.glossary-detail {
+  margin: 0;
+}
+.glossary-formula {
+  margin: 10px 0;
+  overflow-x: auto;
+  text-align: center;
+  font-size: 15px;
+}
+.glossary-formula mjx-container[display="true"] {
+  margin: 0 !important;
+  padding: 2px 0;
+}
+.glossary-detail {
+  color: var(--muted);
+  font-size: 13px;
+}
+.glossary-more {
+  display: inline-block;
+  margin-top: 10px;
+  color: var(--chapter-ink);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.glossary-more:hover { text-decoration: underline; }
+
+@media (max-width: 520px) {
+  .glossary-popover {
+    padding: 13px 14px 12px;
+    font-size: 13.5px;
+  }
+  .glossary-formula { font-size: 14px; }
+}

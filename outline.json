@@ -27,7 +27,7 @@
           "id": "chunking",
           "title": "Подготовка документов и чанкинг",
           "status": "done",
-          "summary": "Как превратить документы в единицы поиска: парсинг и нормализация, фиксированные окна с overlap, структурный и семантический чанкинг, parent–child retrieval, propositions и late chunking. Формальные компромиссы гранулярности, интерактивное сравнение стратегий и методика выбора параметров по retrieval-метрикам.",
+          "summary": "Как превратить документы в единицы поиска: парсинг и нормализация, фиксированные окна с overlap, структурный и семантический чанкинг, parent–child retrieval, propositions и late chunking. Формальные компромиссы гранулярности, интерактивное сравнение стратегий и методика выбора параметров по MRR, nDCG и другим retrieval-метрикам.",
           "concepts": [
             "chunking",
             "overlap",
@@ -36,7 +36,9 @@
             "parent–child retrieval",
             "proposition retrieval",
             "late chunking",
-            "metadata"
+            "metadata",
+            "MRR",
+            "nDCG"
           ]
         },
         {
@@ -99,6 +101,67 @@
             "cross-attention",
             "AnyRes",
             "M-RoPE"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reference",
+      "title": "Справочник",
+      "color": "#6B7F2A",
+      "sections": [
+        {
+          "id": "retrieval-metrics",
+          "title": "Метрики поиска и ранжирования",
+          "status": "done",
+          "summary": "Формулы и область применимости основных offline-метрик поиска: precision@k, recall@k, MRR, MAP, DCG и nDCG. Разобраны бинарная и градуированная релевантность, выбор cutoff, усреднение по запросам и практические ловушки оценки RAG-ретривера.",
+          "concepts": [
+            "precision@k",
+            "recall@k",
+            "MRR",
+            "MAP",
+            "DCG",
+            "nDCG",
+            "qrels"
+          ]
+        },
+        {
+          "id": "generation-metrics",
+          "title": "Метрики генерации",
+          "status": "empty",
+          "summary": "Справочный раздел о метриках качества генерируемого текста, их предпосылках, формулах и ограничениях для разных NLP-задач.",
+          "concepts": [
+            "perplexity",
+            "BLEU",
+            "ROUGE",
+            "BERTScore",
+            "faithfulness"
+          ]
+        },
+        {
+          "id": "probability-information",
+          "title": "Вероятности и информация",
+          "status": "empty",
+          "summary": "Справочный раздел по вероятностным и информационно-теоретическим величинам, которые регулярно встречаются в моделях и статьях по NLP.",
+          "concepts": [
+            "энтропия",
+            "кросс-энтропия",
+            "KL-дивергенция",
+            "softmax",
+            "правдоподобие"
+          ]
+        },
+        {
+          "id": "training-objectives",
+          "title": "Обучение моделей",
+          "status": "empty",
+          "summary": "Справочный раздел о функциях потерь, целях предобучения и дообучения, а также обозначениях, используемых при оптимизации NLP-моделей.",
+          "concepts": [
+            "language modeling loss",
+            "contrastive loss",
+            "ranking loss",
+            "DPO",
+            "градиент"
           ]
         }
       ]
