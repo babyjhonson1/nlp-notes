@@ -1,0 +1,105 @@
+/* Иллюстрация раздела rag/dense-retrieval (префикс классов: dense). */
+
+.dense-stage {
+  min-height: 300px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+.dense-query {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 9px;
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 9px;
+  margin-bottom: 4px;
+}
+.dense-query > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.dense-query > b { color: var(--ink); font-size: 14px; }
+.dense-query > small { margin-left: auto; color: var(--muted); font-size: 13px; }
+.dense-query output { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.dense-head,
+.dense-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) 40px minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas: "title s p g";
+  gap: 6px 12px;
+  align-items: center;
+}
+.dense-head {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.dense-rows { display: grid; gap: 6px; }
+.dense-row {
+  border-left: 3px solid var(--dc);
+  border-radius: 4px;
+  padding: 5px 0 5px 9px;
+  background: color-mix(in srgb, var(--dc) 6%, var(--bg));
+  font-size: 12.5px;
+}
+.dense-c-title { grid-area: title; min-width: 0; }
+.dense-c-s { grid-area: s; text-align: right; font-variant-numeric: tabular-nums; }
+.dense-c-p { grid-area: p; }
+.dense-c-g { grid-area: g; }
+.dense-head .dense-c-title { padding-left: 12px; }
+.dense-row .dense-c-title { display: grid; }
+.dense-row .dense-c-title b { color: var(--ink); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dense-row .dense-c-title small { color: var(--muted); font-size: 11px; }
+.dense-row .dense-c-s { color: var(--ink); }
+.dense-cell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 56px;
+  gap: 8px;
+  align-items: center;
+}
+.dense-cell > span {
+  color: var(--ink);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.dense-meter {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--rule) 55%, transparent);
+}
+.dense-meter i {
+  display: block;
+  height: 100%;
+  background: var(--dc);
+  transition: width 160ms ease;
+}
+
+.dense-row.pos, .dense-key.pos { --dc: var(--g1); }
+.dense-row.hard, .dense-key.hard { --dc: var(--g2); }
+.dense-row.easy, .dense-key.easy { --dc: var(--g3); }
+.dense-row.false, .dense-key.false { --dc: var(--fig-bad); }
+.dense-key {
+  display: inline-block;
+  width: 18px;
+  height: 11px;
+  border-radius: 3px;
+  background: var(--dc);
+}
+
+@media (max-width: 560px) {
+  .dense-stage { min-height: 420px; }
+  .dense-query > small { width: 100%; margin-left: 0; }
+  .dense-head,
+  .dense-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "title s" "p g";
+  }
+  .dense-row { padding-right: 8px; }
+  .dense-cell { grid-template-columns: minmax(0, 1fr) 50px; }
+}
