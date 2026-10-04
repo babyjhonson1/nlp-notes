@@ -158,6 +158,31 @@
       ]
     },
     {
+      "id": "models",
+      "title": "Модели",
+      "color": "#A63D5A",
+      "sections": [
+        {
+          "id": "sbert",
+          "title": "SBERT: эмбеддинги предложений на сиамском BERT",
+          "status": "done",
+          "summary": "Семейство SBERT и моделей sentence-transformers: сиамское дообучение BERT с пулингом вместо cross-encoder, обучение на NLI (классификация по (u, v, |u−v|) и почему она формирует геометрию для косинуса), регрессия на STSb и triplet loss; модели all-* с InfoNCE на 1,17 млрд пар и многоязычные модели через дистилляцию на переводах. Тихие ошибки использования (пулинг, нормировка и косинус, лимит длины, язык, близость ≠ следование) показаны на проверенных примерах; таблица характеристик вариантов.",
+          "concepts": [
+            "SBERT",
+            "siamese network",
+            "mean pooling",
+            "NLI",
+            "STS benchmark",
+            "SoftmaxLoss",
+            "MultipleNegativesRankingLoss",
+            "knowledge distillation",
+            "all-MiniLM-L6-v2",
+            "paraphrase-multilingual"
+          ]
+        }
+      ]
+    },
+    {
       "id": "reference",
       "title": "Справочник",
       "color": "#6B7F2A",
@@ -206,14 +231,18 @@
         {
           "id": "training-objectives",
           "title": "Обучение моделей",
-          "status": "empty",
-          "summary": "Справочный раздел о функциях потерь, целях предобучения и дообучения, а также обозначениях, используемых при оптимизации NLP-моделей.",
+          "status": "draft",
+          "summary": "Общие функции потерь, на которые ссылаются карточки моделей. Сейчас разобраны функции для обучения эмбеддингов: InfoNCE (градиент, негативы из батча и трудные негативы, симметричный вариант, температура, оценка взаимной информации через log N), triplet loss с зазором и его связь с InfoNCE, дистилляция векторов через MSE; соответствие классам sentence-transformers 6.1 и реализация на PyTorch. MLM, span corruption, denoising и дистилляция оценок добавляются по мере появления моделей.",
           "concepts": [
-            "language modeling loss",
             "contrastive loss",
-            "ranking loss",
-            "DPO",
-            "градиент"
+            "InfoNCE",
+            "in-batch negatives",
+            "symmetric InfoNCE",
+            "temperature",
+            "triplet loss",
+            "margin",
+            "embedding distillation",
+            "MSE"
           ]
         }
       ]
