@@ -24,7 +24,9 @@
   --glossary-arrow-x: 50%;
   position: fixed;
   z-index: 1000;
-  width: min(370px, calc(100vw - 24px));
+  width: max-content;
+  min-width: min(370px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
   padding: 15px 16px 14px;
   border: 1px solid var(--tint-rule);
   border-radius: 10px;
@@ -81,8 +83,11 @@
 .glossary-definition,
 .glossary-detail {
   margin: 0;
+  max-width: 370px;
 }
 .glossary-formula {
+  width: max-content;
+  max-width: calc(100vw - 56px);
   margin: 10px 0;
   overflow-x: auto;
   text-align: center;

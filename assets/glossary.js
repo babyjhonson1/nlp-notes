@@ -165,7 +165,10 @@ document.addEventListener("keydown", (event) => {
     closeGlossary({ returnFocus: true });
   }
 });
-document.addEventListener("scroll", () => closeGlossary(), true);
+document.addEventListener("scroll", (event) => {
+  if (glossaryPopup?.contains(event.target)) return;
+  closeGlossary();
+}, true);
 window.addEventListener("resize", () => {
   if (glossaryActiveTerm) positionGlossary(glossaryActiveTerm);
 });
