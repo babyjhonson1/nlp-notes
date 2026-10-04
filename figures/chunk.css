@@ -1,0 +1,70 @@
+/* Иллюстрация раздела rag/chunking (префикс классов: chunk). */
+
+.chunk-stage {
+  min-height: 270px;
+  display: grid;
+  align-content: start;
+  gap: 9px;
+}
+.chunk-doc-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12.5px;
+  margin-bottom: 2px;
+}
+.chunk-list { display: grid; gap: 8px; }
+.chunk-card {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--gc, var(--g1));
+  border-radius: 7px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--gc, var(--g1)) 5%, var(--bg));
+}
+.chunk-card-label {
+  color: var(--gc, var(--g1));
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.chunk-card-text { color: var(--ink); font-size: 13px; line-height: 1.45; }
+.chunk-overlap {
+  background: color-mix(in srgb, var(--fig-accent) 22%, transparent);
+  border-radius: 3px;
+  padding: 1px 2px;
+}
+.chunk-boundary {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr) 46px;
+  gap: 10px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+.chunk-boundary-line { height: 4px; border-radius: 4px; background: var(--rule); overflow: hidden; }
+.chunk-boundary-line i { display: block; height: 100%; width: var(--score); background: var(--g2); }
+.chunk-boundary.break .chunk-boundary-line { outline: 1px solid color-mix(in srgb, var(--fig-bad) 55%, transparent); }
+.chunk-boundary.break .chunk-boundary-line i { background: var(--fig-bad); }
+.chunk-boundary.break b { color: var(--fig-bad); }
+.chunk-range-set { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.chunk-range-set[hidden] { display: none; }
+.chunk-key {
+  width: 18px;
+  height: 11px;
+  border-radius: 3px;
+  border: 1px solid var(--rule);
+  background: var(--bg);
+}
+.chunk-key.overlap { background: color-mix(in srgb, var(--fig-accent) 22%, transparent); }
+.chunk-key.boundary { border-color: var(--fig-bad); border-width: 2px; }
+
+@media (max-width: 560px) {
+  .chunk-stage { min-height: 330px; }
+  .chunk-card { grid-template-columns: 58px minmax(0, 1fr); }
+  .chunk-boundary { grid-template-columns: 58px minmax(0, 1fr) 38px; }
+}
