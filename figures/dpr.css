@@ -1,0 +1,26 @@
+/* Иллюстрации раздела models/dpr (префикс классов: dpr); общие классы схем — figures/mdl.css. */
+
+/* dpr-flow: вопрос через не тот кодировщик, лучший результат поиска */
+.fig path.dpr-wrong:not(.vl-head) { fill: none; stroke: var(--fig-bad); stroke-width: 2; stroke-dasharray: 5 4; }
+.fig line.dpr-wrong { stroke: var(--fig-bad); stroke-width: 2; }
+.fig path.dpr-wrong.vl-head { fill: var(--fig-bad); }
+.fig .dpr-top { font-weight: 600; fill: var(--chapter-ink); }
+.fig .dpr-topf { fill: none; stroke: var(--chapter-ink); stroke-width: 2; }
+
+/* dpr-mips: ось, окружность радиуса φ, исходные и поднятые точки */
+.fig .dpr-axis { stroke: var(--muted); stroke-width: 1.2; }
+.fig .dpr-arc { fill: none; stroke: var(--fig-edge); stroke-width: 1.4; stroke-dasharray: 5 4; }
+.fig .dpr-orig { fill: var(--bg); stroke: var(--fig-node); stroke-width: 1.4; }
+.fig .dpr-orig.bad { stroke: var(--fig-bad); }
+.fig .dpr-up { stroke: var(--fig-edge); stroke-width: 1; stroke-dasharray: 2 3; }
+.fig .dpr-lift { fill: var(--chapter-ink); stroke: var(--bg); stroke-width: 1.2; }
+.fig .dpr-lift.best { fill: var(--fig-accent); }
+.fig .dpr-dist { stroke: var(--fig-edge); stroke-width: 1; }
+.fig .dpr-near { stroke: var(--fig-accent); stroke-width: 2.4; }
+.fig .dpr-badring { fill: none; stroke: var(--fig-bad); stroke-width: 1.6; stroke-dasharray: 3 2; }
+.fig .dpr-badt { fill: var(--fig-bad); font-weight: 600; }
+.dpr-mips-tab { margin-top: 8px; }
+.dpr-mips-tab table { font-size: 13px; font-variant-numeric: tabular-nums; }
+.dpr-mips-tab td small { color: var(--muted); }
+.dpr-mips-tab td.dpr-win { font-weight: 600; color: var(--chapter-ink); }
+.fig .dpr-lead { stroke: var(--fig-bad); stroke-width: 1; stroke-dasharray: 2 2; }
