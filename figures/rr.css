@@ -1,0 +1,46 @@
+/* Иллюстрация раздела rag/reranking (префикс классов: rr). */
+
+.rr-stage { min-height: 300px; display: grid; align-content: start; gap: 12px; }
+.rr-query { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 9px; border-bottom: 1px solid var(--rule); padding-bottom: 8px; }
+.rr-query > span { color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.rr-query > b { color: var(--ink); font-size: 14px; }
+.rr-body { display: grid; gap: 10px; }
+.rr-line { display: grid; grid-template-columns: 70px minmax(0, 1fr) 16px 96px 74px; gap: 8px; align-items: center; font-size: 12.5px; }
+.rr-role { color: var(--muted); font-size: 11.5px; }
+.rr-text { color: var(--ink); }
+.rr-to { color: var(--muted); text-align: center; }
+.rr-vec { display: flex; gap: 1px; height: 14px; }
+.rr-vec i { flex: 1; background: var(--chapter); border-radius: 1px; }
+.rr-tag { font-size: 11px; color: var(--muted); }
+.rr-tag.pre { color: var(--chapter-ink); font-weight: 600; }
+.rr-score { color: var(--ink); font-size: 13px; }
+.rr-grid-wrap { overflow-x: auto; }
+.rr-grid { display: grid; grid-template-columns: 96px repeat(var(--cols), minmax(46px, 1fr)) 48px; gap: 2px; min-width: 480px; font-size: 11.5px; }
+.rr-cell { padding: 4px 3px; text-align: center; border-radius: 3px; font-variant-numeric: tabular-nums; }
+.rr-colhead { color: var(--muted); font-size: 10.5px; line-height: 1.2; align-self: end; }
+.rr-rowhead { color: var(--ink); text-align: left; font-weight: 600; }
+.rr-v { background: color-mix(in srgb, var(--g1) calc(var(--v) * 70%), var(--bg)); color: var(--ink); }
+.rr-best { box-shadow: inset 0 0 0 2px var(--fig-accent); font-weight: 600; }
+.rr-max, .rr-maxhead { color: var(--fig-accent); font-weight: 600; }
+.rr-seq { display: flex; flex-wrap: wrap; gap: 4px; }
+.rr-tok { border-radius: 4px; padding: 3px 6px; font-size: 12px; background: color-mix(in srgb, var(--rule) 60%, var(--bg)); color: var(--ink); }
+.rr-tok.q { background: color-mix(in srgb, var(--g3) 22%, var(--bg)); }
+.rr-tok.d { background: color-mix(in srgb, var(--g1) 22%, var(--bg)); }
+.rr-tok.sp { color: var(--muted); }
+.rr-attn { color: var(--muted); font-size: 12.5px; }
+.rr-cost { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; border-top: 1px solid var(--rule); padding-top: 9px; }
+.rr-cost span { display: block; color: var(--muted); font-size: 11px; }
+.rr-cost b { color: var(--ink); font-size: 12.5px; font-weight: 500; }
+.rr-key { display: inline-block; width: 18px; height: 11px; border-radius: 3px; }
+.rr-key.heat { background: linear-gradient(90deg, var(--bg), color-mix(in srgb, var(--g1) 70%, var(--bg))); border: 1px solid var(--rule); }
+.rr-key.best { box-shadow: inset 0 0 0 2px var(--fig-accent); }
+.rr-key.pre { background: var(--chapter); }
+.rr-key.q { background: color-mix(in srgb, var(--g3) 40%, var(--bg)); }
+.rr-key.d { background: color-mix(in srgb, var(--g1) 40%, var(--bg)); }
+
+@media (max-width: 560px) {
+  .rr-stage { min-height: 380px; }
+  .rr-line { grid-template-columns: 62px minmax(0, 1fr); }
+  .rr-to { display: none; }
+  .rr-cost { grid-template-columns: 1fr; }
+}

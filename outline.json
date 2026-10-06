@@ -109,6 +109,23 @@
             "pool recall",
             "MRR"
           ]
+        },
+        {
+          "id": "reranking",
+          "title": "Реранкинг и late interaction",
+          "status": "done",
+          "summary": "Второй этап поиска: почему bi-encoder не видит, какая часть документа важна для запроса, и как cross-encoder оценивает пару совместно (точечная и списочная функции потерь, негативы из выдачи первого этапа, предел длины). Late interaction ColBERT с расчётом MaxSim на примере, сравнение трёх архитектур по предвычислению, стоимости и памяти; каскад этапов, выбор числа кандидатов в бюджете задержки и диагностика.",
+          "concepts": [
+            "reranking",
+            "cross-encoder",
+            "late interaction",
+            "ColBERT",
+            "MaxSim",
+            "LCE",
+            "каскад",
+            "latency budget",
+            "recall@k'"
+          ]
         }
       ]
     },
