@@ -196,6 +196,24 @@
             "token_type_ids",
             "BEIR"
           ]
+        },
+        {
+          "id": "e5",
+          "title": "E5: эмбеддинги из слабо размеченных пар",
+          "status": "done",
+          "summary": "Семейство E5: одна сеть с префиксами query:/passage:, контрастивное предобучение на 270 млн пар из устройства сайтов (CCPairs, фильтр согласованности, батч 32 768, τ = 0.01) и дообучение с трудными негативами и дистилляцией от cross-encoder (KL + InfoNCE); multilingual-e5 на 1 млрд многоязычных пар, multilingual-e5-large-instruct и e5-mistral с синтетическими данными от GPT-4, инструкциями и last-token pooling. Схема e5-flow с настоящими числами; тихие ошибки: префиксы (проверка на трёх наборах BEIR), ключи промптов в sentence-transformers, узкий диапазон косинусов, </s> у e5-mistral в transformers 5, длина входа.",
+          "concepts": [
+            "E5",
+            "CCPairs",
+            "consistency filter",
+            "weakly supervised contrastive pre-training",
+            "query/passage prefixes",
+            "cross-encoder distillation",
+            "multilingual-e5",
+            "e5-mistral",
+            "instructions",
+            "last-token pooling"
+          ]
         }
       ]
     },
@@ -249,7 +267,7 @@
           "id": "training-objectives",
           "title": "Обучение моделей",
           "status": "draft",
-          "summary": "Общие функции потерь, на которые ссылаются карточки моделей. Сейчас разобраны функции для обучения эмбеддингов: InfoNCE (градиент, негативы из батча и трудные негативы, симметричный вариант, температура, оценка взаимной информации через log N), triplet loss с зазором и его связь с InfoNCE, дистилляция векторов через MSE; соответствие классам sentence-transformers 6.1 и реализация на PyTorch. MLM, span corruption, denoising и дистилляция оценок добавляются по мере появления моделей.",
+          "summary": "Общие функции потерь, на которые ссылаются карточки моделей. Сейчас разобраны функции для обучения эмбеддингов: InfoNCE (градиент, негативы из батча и трудные негативы, симметричный вариант, температура, оценка взаимной информации через log N), triplet loss с зазором и его связь с InfoNCE, дистилляция векторов через MSE и дистилляция оценок от cross-encoder через KL (мягкие метки, ложные негативы, две температуры); соответствие классам sentence-transformers 6.1 и реализация на PyTorch. MLM, span corruption и denoising добавляются по мере появления моделей.",
           "concepts": [
             "contrastive loss",
             "InfoNCE",
@@ -257,9 +275,10 @@
             "symmetric InfoNCE",
             "temperature",
             "triplet loss",
-            "margin",
             "embedding distillation",
-            "MSE"
+            "score distillation",
+            "KL divergence",
+            "cross-encoder teacher"
           ]
         }
       ]

@@ -46,11 +46,10 @@ function mountSbertFlow(box){
       <div class="fig-tabs mdl-tabs" role="tablist" aria-label="Рецепт обучения">${Object.entries(MODES).map(([k, m]) => `<button type="button" role="tab" data-mode="${k}" aria-selected="${k === mode}">${m.tab}</button>`).join("")}</div>
     </div>
     <div class="fig-row" data-batchrow hidden>
-      <span class="fig-status">батч:</span>
-      <div class="fig-tabs" role="tablist" aria-label="Состав батча">
+      <span class="fig-seg">батч<span class="fig-tabs" role="tablist" aria-label="Состав батча">
         <button type="button" role="tab" data-batch="mixed" aria-selected="false">разные темы</button>
         <button type="button" role="tab" data-batch="same" aria-selected="true">один набор</button>
-      </div>
+      </span></span>
     </div>
     ${vlControls()}
     <p class="fig-say" aria-live="polite"></p>

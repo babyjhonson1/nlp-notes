@@ -1,0 +1,20 @@
+/* Иллюстрация раздела models/e5 (префикс классов: e5); общие классы схем — figures/mdl.css. */
+
+/* распределения по кандидатам и полоски косинусов: цвет по роли текста */
+.fig .e5-bar { fill: color-mix(in srgb, var(--ink) 28%, var(--bg)); }
+.fig .e5-bar.pos { fill: var(--mdl-pos); }
+.fig .e5-bar.fn { fill: color-mix(in srgb, var(--mdl-pos) 40%, var(--bg)); stroke: var(--mdl-pos); stroke-width: 1.2; stroke-dasharray: 3 2; }
+.fig .e5-bar.hard { fill: var(--mdl-hard); }
+.fig .e5-base { stroke: var(--fig-edge); stroke-width: 1; }
+.fig .mdl-chip.e5-fn { stroke: var(--mdl-pos); stroke-width: 1.6; stroke-dasharray: 4 3; }
+.mdl-key.e5-fn { border: 2px dashed var(--mdl-pos); }
+
+/* применение: лучший результат поиска, шкала косинусов и порог */
+.fig .e5-top { font-weight: 600; fill: var(--chapter-ink); }
+.fig .e5-topf { fill: none; stroke: var(--chapter-ink); stroke-width: 2; }
+.fig .e5-axis { stroke: var(--muted); stroke-width: 1.2; }
+.fig .e5-thr { stroke: var(--fig-bad); stroke-width: 1.6; stroke-dasharray: 5 4; }
+.fig .e5-thrt { fill: var(--fig-bad); font-weight: 600; }
+
+/* подпись и переключатель переносятся на узком экране */
+.e5-seg { flex-wrap: wrap; }
