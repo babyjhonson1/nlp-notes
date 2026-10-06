@@ -14,8 +14,8 @@ function mountHybRrf(box){
     { key: "dense", title: "Плотный поиск", items: [["C", "0,83"], ["A", "0,81"], ["B", "0,79"], ["E", "0,74"]] }
   ];
   const DEPTH = 4;
-  const KS = [1, 10, 60];
-  let k = 60;
+  const CS = [1, 10, 60];  // константа RRF c (в литературе часто k)
+  let c = 60;
 
   box.innerHTML = `
     <div class="fig-stage hyb-stage">
@@ -32,7 +32,7 @@ function mountHybRrf(box){
         <div class="hyb-fused-rows" aria-live="polite"></div>
       </div>
     </div>
-    ${vlControls(`<div class="fig-tabs" role="tablist" aria-label="Константа k">${KS.map((v) => `<button type="button" role="tab" data-k="${v}" aria-selected="${v === k}">\\(k=${v}\\)</button>`).join("")}</div>`)}
+    ${vlControls(`<div class="fig-tabs" role="tablist" aria-label="Константа c">${CS.map((v) => `<button type="button" role="tab" data-c="${v}" aria-selected="${v === c}">\\(c=${v}\\)</button>`).join("")}</div>`)}
     <p class="fig-say"></p>
     <div class="fig-legend">
       <span><i class="hyb-key lex"></i>вклад места в BM25</span>
@@ -42,7 +42,7 @@ function mountHybRrf(box){
 
   const fusedBox = box.querySelector(".hyb-fused-rows");
   const say = box.querySelector(".fig-say");
-  const digits = () => (k >= 60 ? 5 : k >= 10 ? 4 : 3);
+  const digits = () => (c >= 60 ? 5 : c >= 10 ? 4 : 3);
   const fmt = (v) => v.toLocaleString("ru-RU", { minimumFractionDigits: digits(), maximumFractionDigits: digits() });
   const tex = (v) => v.toFixed(digits()).replace(".", "{,}");
   const docAt = (list, rank) => list.items[rank - 1][0];
@@ -51,7 +51,7 @@ function mountHybRrf(box){
     const s = {};
     Object.keys(DOCS).forEach((d) => { s[d] = { lex: 0, dense: 0 }; });
     for (const list of LISTS){
-      list.items.slice(0, upTo).forEach(([doc], i) => { s[doc][list.key] = 1 / (k + i + 1); });
+      list.items.slice(0, upTo).forEach(([doc], i) => { s[doc][list.key] = 1 / (c + i + 1); });
     }
     return s;
   }
@@ -65,7 +65,7 @@ function mountHybRrf(box){
     if (step <= DEPTH){
       const r = step;
       const a = docAt(LISTS[0], r), b = docAt(LISTS[1], r);
-      const add = `\\(\\tfrac{1}{${k}+${r}}\\approx ${tex(1 / (k + r))}\\)`;
+      const add = `\\(\\tfrac{1}{${c}+${r}}\\approx ${tex(1 / (c + r))}\\)`;
       let t = a === b
         ? `Место ${r}: ${a} стоит ${["первым", "вторым", "третьим", "четвёртым"][r - 1]} в обоих списках и получает ${add} дважды.`
         : `Место ${r}: ${a} из BM25 и ${b} из плотного поиска получают по ${add}.`;
@@ -74,12 +74,12 @@ function mountHybRrf(box){
       return t;
     }
     const o = order(s);
-    let t = `Итог при \\(k=${k}\\): ${o.join(" → ")}.`;
-    if (k >= 10){
-      const ratio = ((k + 4) / (k + 1)).toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+    let t = `Итог при \\(c=${c}\\): ${o.join(" → ")}.`;
+    if (c >= 10){
+      const ratio = ((c + 4) / (c + 1)).toLocaleString("ru-RU", { maximumFractionDigits: 2 });
       t += ` Первым стал A — второй в обоих списках. E с третьим и четвёртым местами обходит D, лидера BM25: первое место весит лишь в ${ratio} раза больше четвёртого, и важнее, в скольких списках есть документ.`;
     } else {
-      t += " При \\(k=1\\) первое место весит в полтора раза больше второго и в 2,5 раза больше четвёртого, поэтому C, лидер плотного поиска, обходит A, а D, лидер BM25, обходит E.";
+      t += " При \\(c=1\\) первое место весит в полтора раза больше второго и в 2,5 раза больше четвёртого, поэтому C, лидер плотного поиска, обходит A, а D, лидер BM25, обходит E.";
     }
     return t;
   }
@@ -91,9 +91,9 @@ function mountHybRrf(box){
       const r = Number(el.dataset.rank);
       el.classList.toggle("done", r <= upTo);
       el.classList.toggle("cur", step <= DEPTH && r === step);
-      el.querySelector(".hyb-add").textContent = r <= upTo ? "+" + fmt(1 / (k + r)) : "";
+      el.querySelector(".hyb-add").textContent = r <= upTo ? "+" + fmt(1 / (c + r)) : "";
     });
-    const max = 2 / (k + 1);
+    const max = 2 / (c + 1);
     fusedBox.innerHTML = order(s).map((d, i) => {
       const v = total(s[d]);
       return `<div class="hyb-row${v === 0 ? " zero" : ""}">
@@ -107,10 +107,10 @@ function mountHybRrf(box){
 
   const NAMES = ["две выдачи", "место 1", "место 2", "место 3", "место 4", "итог"];
   const player = vlPlayer(box, { count: () => NAMES.length, draw, label: (i, n) => `шаг ${i + 1} из ${n}: ${NAMES[i]}` });
-  box.querySelectorAll("[data-k]").forEach((button) => {
+  box.querySelectorAll("[data-c]").forEach((button) => {
     button.addEventListener("click", () => {
-      k = Number(button.dataset.k);
-      box.querySelectorAll("[data-k]").forEach((b) => b.setAttribute("aria-selected", String(b === button)));
+      c = Number(button.dataset.c);
+      box.querySelectorAll("[data-c]").forEach((b) => b.setAttribute("aria-selected", String(b === button)));
       player.paint();
     });
   });

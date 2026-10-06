@@ -8,6 +8,7 @@
     <li><a href="#" data-jump="metrics-mrr">MRR</a></li>
     <li><a href="#" data-jump="metrics-map">AP и MAP</a></li>
     <li><a href="#" data-jump="metrics-ndcg">DCG и nDCG</a></li>
+    <li><a href="#" data-jump="metrics-example">Один список — все метрики</a></li>
     <li><a href="#" data-jump="metrics-choice">Как выбирать метрику</a></li>
     <li><a href="#" data-jump="metrics-practice">Метрики на практике</a></li>
     <li><a href="#" data-jump="metrics-papers">Ключевые статьи</a></li>
@@ -118,6 +119,45 @@
 
 <p>При такой конвенции nDCG лежит между нулём и единицей, а идеальная перестановка получает единицу. Запросы без положительного gain некоторые реализации исключают, а некоторые оценивают нулём — это ещё одна настройка, которую нужно фиксировать рядом с числом.</p>
 
+<h2 id="metrics-example">Один список — все метрики</h2>
+
+<p>Посчитаем метрики для одного запроса, чтобы увидеть, какие решения скрыты в определениях. Разметка градуированная: для запроса известны четыре объекта с положительными оценками \(3\), \(2\), \(1\) и \(1\). Система вернула пять результатов, и один из релевантных объектов с оценкой \(1\) в выдачу не попал. Зафиксируем конвенции: cutoff \(k=5\); для бинарных метрик релевантным считается объект с оценкой больше нуля, поэтому \(R_q=4\); gain для DCG экспоненциальный.</p>
+
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Позиция \(i\)</th><th>\(\operatorname{rel}_{q}(i)\)</th><th>Бинарно</th><th>\(\operatorname{Precision@}i\)</th><th>Вклад в DCG</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>\(1\)</td><td>\(0\)</td><td>\(0\)</td><td>\(0\)</td><td>\(0\)</td></tr>
+      <tr><td>\(2\)</td><td>\(3\)</td><td>\(1\)</td><td>\(1/2\)</td><td>\(7/\log_2 3\approx4.417\)</td></tr>
+      <tr><td>\(3\)</td><td>\(1\)</td><td>\(1\)</td><td>\(2/3\)</td><td>\(1/\log_2 4=0.5\)</td></tr>
+      <tr><td>\(4\)</td><td>\(0\)</td><td>\(0\)</td><td>\(1/2\)</td><td>\(0\)</td></tr>
+      <tr><td>\(5\)</td><td>\(2\)</td><td>\(1\)</td><td>\(3/5\)</td><td>\(3/\log_2 6\approx1.161\)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<p>Простые метрики: \(\operatorname{Precision@}5=3/5=0.6\), \(\operatorname{Recall@}5=3/4=0.75\), а первый релевантный результат стоит на второй позиции, поэтому \(\operatorname{RR}=1/2\). Для MRR это вклад одного запроса; AP и nDCG ниже тоже считаются для одного запроса, а MAP и средний nDCG получаются усреднением по \(Q\).</p>
+
+<p>AP усредняет precision на позициях релевантных результатов и делит на все известные релевантные объекты, включая ненайденный:</p>
+
+<p class="formula">\[
+\operatorname{AP@}5=\frac{1}{4}\left(\frac{1}{2}+\frac{2}{3}+\frac{3}{5}\right)\approx0.442.
+\]</p>
+
+<p>Здесь \(R_q=4\le k\), поэтому конвенция \(\min(R_q,k)\) даёт то же число. При cutoff \(k=3\) они расходятся: \((1/2+2/3)/4\approx0.292\) против \((1/2+2/3)/3\approx0.389\). Оценки \(3\) и \(1\) для AP одинаковы: после бинаризации метрика их не различает.</p>
+
+<p>nDCG использует градации. DCG выдачи — сумма последнего столбца, \(\operatorname{DCG@}5\approx6.077\). Идеальный порядок строится по <em>всем</em> известным оценкам запроса, \(3, 2, 1, 1\), а не только по найденным:</p>
+
+<p class="formula">\[
+\operatorname{IDCG@}5=\frac{7}{\log_2 2}+\frac{3}{\log_2 3}+\frac{1}{\log_2 4}+\frac{1}{\log_2 5}\approx9.823,
+\qquad
+\operatorname{nDCG@}5\approx\frac{6.077}{9.823}\approx0.619.
+\]</p>
+
+<p>Если по ошибке построить идеальный порядок только из найденных оценок \(3, 2, 1\), получится \(0.647\): пропущенный релевантный объект перестанет штрафовать систему. Вся разница между метриками здесь — в знаменателях и бинаризации, поэтому их фиксируют вместе с числом.</p>
+
 <h2 id="metrics-choice">Как выбирать метрику</h2>
 
 <div class="table-wrap">
@@ -151,6 +191,14 @@ def reciprocal_rank(binary_relevance):
             return 1.0 / rank
     return 0.0
 
+def average_precision(binary_relevance, num_relevant, k):
+    hits, total = 0, 0.0
+    for rank, relevant in enumerate(binary_relevance[:k], start=1):
+        if relevant:
+            hits += 1
+            total += hits / rank             # Precision@rank на позиции релевантного
+    return total / num_relevant if num_relevant else 0.0
+
 def dcg(grades, k):
     return sum(
         (2**grade - 1) / math.log2(rank + 1)
@@ -160,11 +208,17 @@ def dcg(grades, k):
 def ndcg(retrieved_grades, all_judged_grades, k):
     actual = dcg(retrieved_grades, k)
     ideal = dcg(sorted(all_judged_grades, reverse=True), k)
-    return actual / ideal if ideal &gt; 0 else 0.0</code></pre>
+    return actual / ideal if ideal &gt; 0 else 0.0
+
+grades = [0, 3, 1, 0, 2]                  # выдача из примера выше
+binary = [g &gt; 0 for g in grades]
+print(reciprocal_rank(binary))                          # 0.5
+print(round(average_precision(binary, 4, k=5), 3))      # 0.442
+print(round(ndcg(grades, [3, 2, 1, 1], k=5), 3))        # 0.619</code></pre>
 
 <p>Перед сравнением систем зафиксируйте cutoff, правило дедупликации, тип объекта, шкалу релевантности и обработку запросов без положительных оценок. Усредняйте метрики по запросам, а не по отдельным документам; вместе со средним полезно приводить доверительный интервал, полученный bootstrap-перевыборкой запросов.</p>
 
-<p>В RAG дополнительно разделяйте document-level и chunk-level оценку. Несколько почти одинаковых чанков одного документа могут искусственно заполнить top-\(k\): chunk precision снизится, хотя нужный документ найден. И наоборот, document recall не гарантирует, что retriever выбрал именно тот фрагмент, в котором находится доказательство.</p>
+<p>В RAG дополнительно разделяйте document-level и chunk-level оценку. Несколько почти одинаковых релевантных чанков одного документа могут заполнить top-\(k\), и chunk precision останется высокой: каждый из них по отдельности релевантен. Страдают разнообразие и покрытие разных доказательств: другие релевантные документы и фрагменты вытесняются за срез. Это видно по document recall или по доле покрытых доказательств, а не по precision; precision падает, только если повторяющиеся чанки нерелевантны. И наоборот, document recall не гарантирует, что retriever выбрал именно тот фрагмент, в котором находится доказательство.</p>
 
 <h2 id="metrics-papers">Ключевые статьи</h2>
 
