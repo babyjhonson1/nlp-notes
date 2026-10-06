@@ -1,0 +1,38 @@
+/* Иллюстрация раздела models/colbert (префикс классов: colbert); общие классы схем — figures/mdl.css. */
+
+/* токены: маркеры [Q]/[D], позиции [MASK], отброшенная пунктуация */
+.fig .mdl-tok.colbert-mk { fill: var(--chapter-ink); }
+.fig .mdl-tok.colbert-msk { fill: color-mix(in srgb, var(--fig-accent) 30%, var(--bg)); stroke: var(--fig-accent); stroke-width: 0.6; }
+.fig .mdl-tok.colbert-pun { fill: none; stroke: var(--fig-bad); stroke-width: 1; stroke-dasharray: 2 1.5; }
+.fig .mdl-barf.colbert-mskf { stroke: var(--fig-accent); }
+.fig .colbert-x { stroke: var(--fig-bad); stroke-width: 1.8; }
+
+/* матрица MaxSim */
+.fig .colbert-cell { stroke: var(--bg); stroke-width: 1; }
+.fig .colbert-max { fill: none; stroke: var(--chapter-ink); stroke-width: 2; }
+.fig .colbert-cv { fill: var(--ink); font-size: 9.5px; font-weight: 600; text-anchor: middle; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+.fig .colbert-hd { fill: var(--ink); font-size: 10.5px; dominant-baseline: central; }
+.fig .colbert-hd.on { fill: var(--fig-accent); font-weight: 600; }
+.fig .colbert-hd.off { fill: var(--muted); }
+.fig .colbert-rl.msk { fill: var(--fig-accent); }
+.fig .colbert-mxv { fill: var(--chapter-ink); font-weight: 600; }
+
+/* индекс: точки, центроиды, сетка квантования, вектор запроса */
+.fig .colbert-pt { fill: color-mix(in srgb, var(--ink) 38%, var(--bg)); }
+.fig .colbert-pt.on { fill: var(--chapter-ink); }
+.fig .colbert-cent { stroke: var(--ink); stroke-width: 2; fill: none; }
+.fig .colbert-cent.on { stroke: var(--chapter-ink); stroke-width: 2.6; }
+.fig .colbert-cl { fill: var(--muted); font-size: 10.5px; }
+.fig .colbert-cl.on { fill: var(--chapter-ink); font-weight: 600; }
+.fig .colbert-grid { fill: var(--fig-accent); }
+.fig line.colbert-res { stroke: var(--chapter-ink); stroke-width: 1.6; }
+.fig path.colbert-res.vl-head { fill: var(--chapter-ink); }
+.fig .colbert-rec { fill: none; stroke: var(--fig-accent); stroke-width: 2; }
+.fig .colbert-q { fill: var(--mdl-q); stroke: var(--bg); stroke-width: 1; }
+.fig .colbert-probe { stroke: var(--mdl-q); stroke-width: 1.4; stroke-dasharray: 4 3; }
+
+/* значки легенды и перенос переключателя */
+.mdl-key.colbert-msk { background: color-mix(in srgb, var(--fig-accent) 30%, var(--bg)); border: 1px solid var(--fig-accent); }
+.mdl-key.colbert-max { border: 2px solid var(--chapter-ink); }
+.mdl-key.colbert-cent { background: linear-gradient(45deg, transparent 42%, var(--ink) 42% 58%, transparent 58%), linear-gradient(-45deg, transparent 42%, var(--ink) 42% 58%, transparent 58%); }
+.colbert-seg { flex-wrap: wrap; }
