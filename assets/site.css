@@ -57,12 +57,49 @@ a { color: inherit; }
 
 /* ---------- Каркас: главы | разделы | страница ---------- */
 .app {
-  --w-ch: 210px;
-  --w-sec: 270px;
+  --w-ch: var(--ch-expanded, 210px);
+  --w-sec: var(--sec-expanded, 270px);
+  position: relative;
   display: grid;
   grid-template-columns: var(--w-ch) var(--w-sec) minmax(0, 1fr);
   height: 100%;
   transition: grid-template-columns 0.22s ease;
+}
+
+.panel-resizer {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 8px;
+  transform: translateX(-50%);
+  z-index: 5;
+  cursor: col-resize;
+  touch-action: none;
+  transition: left 0.22s ease;
+}
+.resizer-ch { left: var(--w-ch); }
+.resizer-sec { left: calc(var(--w-ch) + var(--w-sec)); }
+.panel-resizer:hover, .panel-resizer:focus-visible { background: var(--tint-rule); }
+.app.resizing, .resizing .panel-resizer { transition: none; }
+.app.resizing { cursor: col-resize; user-select: none; -webkit-user-select: none; }
+.ch-collapsed .resizer-ch, .sec-collapsed .resizer-sec { display: none; }
+
+/* Цвет выбранной в панели главы не меняет оформление открытого текста. */
+.chapters, .sections {
+  --chapter-ink: var(--chapter);
+  --tint: color-mix(in srgb, var(--chapter) 8%, var(--bg));
+  --tint-rule: color-mix(in srgb, var(--chapter) 22%, var(--rule));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) :is(.chapters, .sections) {
+    --chapter-ink: color-mix(in srgb, var(--chapter) 55%, #FFFFFF);
+    --tint: color-mix(in srgb, var(--chapter) 16%, var(--bg));
+    --tint-rule: color-mix(in srgb, var(--chapter) 35%, var(--rule));
+  }
+}
+:root[data-theme="dark"] :is(.chapters, .sections) {
+  --chapter-ink: color-mix(in srgb, var(--chapter) 55%, #FFFFFF);
+  --tint: color-mix(in srgb, var(--chapter) 16%, var(--bg));
+  --tint-rule: color-mix(in srgb, var(--chapter) 35%, var(--rule));
 }
 
 /* Кнопки сворачивания панелей */
@@ -109,6 +146,12 @@ a { color: inherit; }
 }
 .chapter-list { list-style: none; margin: 0; padding: 0; }
 .chapter-link {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
   position: relative;
   display: flex;
   align-items: center;
@@ -119,6 +162,7 @@ a { color: inherit; }
   color: var(--ink);
   white-space: nowrap;
 }
+.chapter-link .label { overflow: hidden; text-overflow: ellipsis; }
 .chapter-link .swatch {
   flex: none;
   width: 10px; height: 10px;
@@ -193,8 +237,8 @@ a { color: inherit; }
   font-size: 14px;
   color: var(--muted);
 }
-.crumb a { color: var(--chapter-ink); text-decoration: none; font-weight: 500; }
-.crumb a:hover { text-decoration: underline; }
+.crumb button { color: var(--chapter-ink); font: inherit; font-weight: 500; background: none; border: 0; padding: 0; cursor: pointer; }
+.crumb button:hover { text-decoration: underline; }
 .page h1 {
   margin: 0 0 36px;
   font-family: var(--text);
@@ -317,7 +361,7 @@ a { color: inherit; }
 @media (max-width: 820px) {
   html, body { height: auto; }
   .app { display: block; height: auto; }
-  .toggle { display: none; }
+  .toggle, .panel-resizer { display: none; }
   .chapters-head { padding: 0; }
 
   .chapters {
@@ -356,7 +400,7 @@ a { color: inherit; }
 
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; }
-  .app, .toggle svg { transition: none; }
+  .app, .toggle svg, .panel-resizer { transition: none; }
 }
 /* ---------- Иллюстрации ---------- */
 :root {

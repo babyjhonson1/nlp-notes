@@ -80,20 +80,17 @@ window.onMathJaxReady = () => {
 };
 if (window.__mjReady) window.onMathJaxReady();
 
-let renderSeq = 0;
-async function render() {
-  const seq = ++renderSeq;
-  const { chapter, section, anchor } = route();
-  if (typeof closeGlossary === "function") closeGlossary();
-  document.documentElement.style.setProperty("--chapter", chapter.color);
-
+// Просматриваемая в панели глава независима от открытого текста и URL.
+function renderNavigation(chapter) {
+  const reading = route();
+  [$("chapters"), $("sections")].forEach(el => el.style.setProperty("--chapter", chapter.color));
   // Главы
   $("chapter-list").innerHTML = NOTEBOOK.chapters.map((c) => `
     <li>
-      <a class="chapter-link" href="#/${c.id}" style="--c:${c.color}" title="${escapeHtml(c.title)}"
+      <button type="button" class="chapter-link" data-chapter="${c.id}" style="--c:${c.color}" title="${escapeHtml(c.title)}" aria-controls="section-list"
          ${c.id === chapter.id ? 'aria-current="true"' : ""}>
         <span class="swatch" aria-hidden="true"></span><span class="label">${escapeHtml(c.title)}</span>
-      </a>
+      </button>
     </li>`).join("");
 
   // Разделы
@@ -104,11 +101,20 @@ async function render() {
   $("section-list").innerHTML = chapter.sections.map((s) => `
     <li>
       <a class="section-link" href="#/${chapter.id}/${s.id}"
-         ${section && s.id === section.id ? 'aria-current="page"' : ""}>${escapeHtml(s.title)}</a>
+         ${reading.chapter.id === chapter.id && reading.section?.id === s.id ? 'aria-current="page"' : ""}>${escapeHtml(s.title)}</a>
     </li>`).join("");
+}
+
+let renderSeq = 0;
+async function render() {
+  const seq = ++renderSeq;
+  const { chapter, section, anchor } = route();
+  if (typeof closeGlossary === "function") closeGlossary();
+  document.documentElement.style.setProperty("--chapter", chapter.color);
+  renderNavigation(chapter);
 
   // Страница
-  $("crumb").innerHTML = `<a href="#/${chapter.id}">${escapeHtml(chapter.title)}</a>`;
+  $("crumb").innerHTML = `<button type="button" data-chapter="${chapter.id}">${escapeHtml(chapter.title)}</button>`;
   if (!section) {
     $("section-title").textContent = chapter.title;
     $("section-body").innerHTML = `<div class="empty"><strong>В главе пока нет разделов</strong>Добавленные разделы появятся в панели слева.</div>`;
@@ -149,12 +155,45 @@ async function render() {
 /* ---------- Сворачивание панелей ---------- */
 const app = document.querySelector(".app");
 const UI_KEY = "nlp-notes-ui";
-let ui = { ch: false, sec: false };
+let ui = { ch: false, sec: false, chWidth: 210, secWidth: 270 };
 try { ui = { ...ui, ...JSON.parse(localStorage.getItem(UI_KEY) || "{}") }; } catch (e) {}
+const panelSettings = {
+  ch: { min: 160, max: 420, initial: 210, collapsed: 56, id: "chapters" },
+  sec: { min: 190, max: 560, initial: 270, collapsed: 44, id: "sections" }
+};
+for (const [key, settings] of Object.entries(panelSettings)) {
+  const value = ui[`${key}Width`];
+  ui[`${key}Width`] = Number.isFinite(value)
+    ? Math.max(settings.min, Math.min(settings.max, value)) : settings.initial;
+}
+function saveUI() {
+  try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) {}
+}
+
+// При сужении окна сохраняем место для текста, не теряя предпочтения пользователя.
+function panelWidths() {
+  const widths = Object.fromEntries(Object.entries(panelSettings).map(([key, s]) =>
+    [key, ui[key] ? s.collapsed : ui[`${key}Width`]]));
+  const excess = Math.max(0, widths.ch + widths.sec - Math.max(350, window.innerWidth - 360));
+  const room = Object.fromEntries(Object.entries(panelSettings).map(([key, s]) =>
+    [key, ui[key] ? 0 : Math.max(0, widths[key] - s.min)]));
+  const total = room.ch + room.sec;
+  if (total) for (const key of ["ch", "sec"]) widths[key] -= Math.min(excess, total) * room[key] / total;
+  return widths;
+}
 
 function applyUI() {
   app.classList.toggle("ch-collapsed", ui.ch);
   app.classList.toggle("sec-collapsed", ui.sec);
+  const widths = panelWidths();
+  for (const [key, settings] of Object.entries(panelSettings)) {
+    app.style.setProperty(`--${key}-expanded`, `${widths[key]}px`);
+    const handle = $(`resize-${settings.id}`);
+    handle.setAttribute("aria-valuenow", Math.round(widths[key]));
+    handle.setAttribute("aria-valuemin", settings.min);
+    handle.setAttribute("aria-valuemax", settings.max);
+    handle.setAttribute("aria-valuetext", `${Math.round(widths[key])} пикселей`);
+  }
   const setBtn = (btn, collapsed, what) => {
     const label = `${collapsed ? "Развернуть" : "Свернуть"} ${what} (${what === "главы" ? "[" : "]"})`;
     btn.setAttribute("aria-expanded", String(!collapsed));
@@ -166,9 +205,65 @@ function applyUI() {
 }
 function togglePanel(key) {
   ui[key] = !ui[key];
-  try { localStorage.setItem(UI_KEY, JSON.stringify(ui)); } catch (e) {}
+  saveUI();
   applyUI();
 }
+
+/* ---------- Изменение ширины панелей ---------- */
+for (const [key, settings] of Object.entries(panelSettings)) {
+  const handle = $(`resize-${settings.id}`);
+  let drag = null;
+  const setWidth = value => {
+    const other = key === "ch" ? "sec" : "ch";
+    const max = Math.min(settings.max, window.innerWidth - panelWidths()[other] - 360);
+    ui[`${key}Width`] = Math.round(Math.max(settings.min, Math.min(max, value)));
+    applyUI();
+  };
+  handle.addEventListener("pointerdown", e => {
+    if (e.button !== 0 || ui[key] || window.innerWidth <= 820) return;
+    e.preventDefault();
+    handle.focus();
+    drag = { x: e.clientX, width: panelWidths()[key], id: e.pointerId };
+    handle.setPointerCapture(e.pointerId);
+    app.classList.add("resizing");
+  });
+  handle.addEventListener("pointermove", e => {
+    if (drag && drag.id === e.pointerId) setWidth(drag.width + e.clientX - drag.x);
+  });
+  const finish = e => {
+    if (!drag || drag.id !== e.pointerId) return;
+    drag = null;
+    app.classList.remove("resizing");
+    if (handle.hasPointerCapture(e.pointerId)) handle.releasePointerCapture(e.pointerId);
+    saveUI();
+  };
+  ["pointerup", "pointercancel", "lostpointercapture"].forEach(type => handle.addEventListener(type, finish));
+  handle.addEventListener("keydown", e => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+    e.preventDefault();
+    setWidth(e.key === "Home" ? settings.min : e.key === "End" ? settings.max :
+      panelWidths()[key] + (e.key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 40 : 10));
+    saveUI();
+  });
+  handle.addEventListener("dblclick", () => {
+    ui[`${key}Width`] = settings.initial;
+    applyUI();
+    saveUI();
+  });
+}
+window.addEventListener("resize", applyUI);
+
+document.addEventListener("click", e => {
+  const button = e.target.closest("button[data-chapter]");
+  if (!button) return;
+  const chapter = NOTEBOOK.chapters.find(c => c.id === button.dataset.chapter);
+  if (!chapter) return;
+  const fromChapterList = button.classList.contains("chapter-link");
+  renderNavigation(chapter);
+  if (ui.sec) togglePanel("sec");
+  // Перерисовка списка не должна терять фокус клавиатуры.
+  if (fromChapterList) document.querySelector(`.chapter-link[data-chapter="${chapter.id}"]`).focus({ preventScroll: true });
+});
 
 $("toggle-chapters").addEventListener("click", () => togglePanel("ch"));
 $("toggle-sections").addEventListener("click", (e) => { e.stopPropagation(); togglePanel("sec"); });
