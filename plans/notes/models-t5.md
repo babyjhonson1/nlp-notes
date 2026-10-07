@@ -1,0 +1,26 @@
+# T5: происхождение чисел и проверки (2026-10-07)
+
+Модели не запускались. Проверки — по статьям, model card, конфигурациям (небольшие JSON), исходному коду transformers 5.18 и репозитория T5 и одному токенизатору t5-base и flan-t5-base (`tokenizer.json`, без весов).
+
+## Источники
+
+- T5 (arXiv 1910.10683): архитектура (нормировка без сдвига, относительное смещение, 32 корзины до 128, общее для слоёв), C4 (правила раздела 2.2), словарь 32 000 (C4 + de/fr/ro 10:1:1:1), формат входа (раздел 2.4, примеры «translate English to German: That is good.» → «Das ist gut.», STS-B с шагом 0.2), базовая модель (2^19 шагов, 2^35 токенов, Adafactor, inverse sqrt), сравнение целей (таблицы 4, 5, 7), многозадачность (таблица 14: 83.11 против 83.28 GLUE), итоговые модели (раздел 3.7: 10^6 шагов × 2^11 × 512, размеры, искусственные размеры C4 в смеси, WMT ≤ 1 млн, beam 4 / 0.6).
+- released_checkpoints.md репозитория T5: v1.1 — GEGLU, без dropout при предобучении, только C4, без общих эмбеддингов, XL/XXL; LM-adapted — +100 тыс. шагов LM.
+- t5/data/preprocessors.py: `random_spans_noise_mask` — видимые и скрытые отрезки чередуются, начиная с видимого, их поровну.
+- mT5 (arXiv 2010.11934): mC4 (71 срез, фильтр длины строк, cld3 ≥ 70%, ≥ 10 000 страниц, 107 «языков» с 6 вариантами письменности), α = 0.3, словарь 250 000 с byte fallback, 10^6 шагов × 1024 × 1024, случайный перевод и подмешивание mC4.
+- Flan (arXiv 2210.11416): 1836 задач (Muffin 80, T0-SF 193, NIV2 1554, CoT 9), шаблоны с примерами и CoT, packing, таблица 2 (доля вычислений 1.6–0.2%), таблица 22 (батч 64, dropout 0.05, lr 5e-4, 98k…14k шагов), таблица 23 (потолки 30k/20k/5k/100k, доли B 46/27.9/24.2/1.8), таблица 5 (MMLU direct: T5-Base 25.7 / Flan 35.9, T5-XXL 25.9 / Flan 55.1; базовые T5 — LM-adapted).
+- Конфигурации Hugging Face: t5-base (d_ff 3072, ReLU, общие эмбеддинги, vocab 32128, task_specific_params), t5-v1_1-base, mt5-base, flan-t5-base/large (gated-gelu, tie_word_embeddings false); generation_config без max_length; model card v1.1 и mT5 — «has to be fine-tuned»; t5-base — «multi-task mixture». Параметры: t5-small 60 506 880, t5-base 222 903 936, flan-t5-base 247 577 856, flan-t5-large 783 150 080 (метаданные); t5-v1_1-base 990 441 433 байт, mt5-base 2 329 735 129 байт в float32. Лицензии — Apache 2.0.
+
+## Код transformers 5.18
+
+- `generation/configuration_utils.py`: max_length по умолчанию 20; `generation/utils.py`: предупреждение UserWarning о model-agnostic default.
+- `models/t5/modeling_t5.py`: RMS-нормировка, `_relative_position_bucket` (в кодировщике 16 + 16 корзин, 8 точных), смещение только в первом блоке, нет деления на √d_k, клиппинг inf в float16, `_keep_in_fp32_modules = ["wo"]` (комментарий о 8-битной flan-t5-xxl), `_shift_right` заменяет -100 на pad.
+- `data/data_collator.py`: `DataCollatorForSeq2Seq.label_pad_token_id = -100`; `DataCollatorForLanguageModeling` для справочника MLM.
+
+## Токенизатор
+
+t5-base и t5-v1_1-base — один и тот же `spiece.model`; flan-t5-base ведёт себя так же. «{», «}», «<», «~», «^», «`», «\», «ï» → `<unk>`; переносы и отступы схлопываются; «Мужчина играет на гитаре.» → «уина ирает на итаре.» (4 `<unk>`); `<extra_id_0>` = 32099, `<extra_id_99>` = 32000, длина словаря 32 100. Корзины смещений (кодировщик, назад): 1–7 свои, 12 → 9, 16 и 20 → 10, ≥ 100 → 15.
+
+## Схема `t5-flow`
+
+Токены примеров — из токенизатора; вероятности `PROB` (0.97, 0.41, 0.88, 0.93, 0.62, 0.95, 0.99) и тексты ответов, кроме перевода из статьи, условные. Потери 0.24 считаются в коде.

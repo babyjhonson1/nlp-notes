@@ -1,4 +1,4 @@
-<p class="lead">Функция потерь определяет, чему учится модель: какие тексты окажутся рядом и какие ошибки будут исправляться в первую очередь. Многие модели обучены одними и теми же функциями потерь и различаются данными, способом собирать примеры и этапами обучения. Здесь собраны общие функции потерь, на которые ссылаются карточки моделей: формула, что делает её градиент, какие у неё параметры и где её используют. Пока это функции для обучения векторных представлений — контрастивная InfoNCE, triplet loss с зазором, дистилляция векторов и дистилляция оценок от более сильной модели — и маскированное языковое моделирование, на котором предобучают сами кодировщики.</p>
+<p class="lead">Функция потерь определяет, чему учится модель: какие тексты окажутся рядом и какие ошибки будут исправляться в первую очередь. Многие модели обучены одними и теми же функциями потерь и различаются данными, способом собирать примеры и этапами обучения. Здесь собраны общие функции потерь, на которые ссылаются карточки моделей: формула, что делает её градиент, какие у неё параметры и где её используют. Пока это функции для обучения векторных представлений — контрастивная InfoNCE, triplet loss с зазором, дистилляция векторов и дистилляция оценок от более сильной модели — и цели предобучения самих моделей: маскированное языковое моделирование для кодировщиков и восстановление спанов для моделей кодировщик-декодер.</p>
 
 <nav class="toc" aria-label="Содержание раздела">
   <p>Содержание</p>
@@ -9,6 +9,7 @@
     <li><a href="#" data-jump="obj-distill">Дистилляция векторов</a></li>
     <li><a href="#" data-jump="obj-kl">Дистилляция оценок</a></li>
     <li><a href="#" data-jump="obj-mlm">Маскированное языковое моделирование</a></li>
+    <li><a href="#" data-jump="obj-span">Восстановление спанов</a></li>
     <li><a href="#" data-jump="obj-practice">Функции потерь на практике</a></li>
     <li><a href="#" data-jump="obj-papers">Ключевые статьи</a></li>
   </ol>
@@ -99,6 +100,20 @@
 <p>MLM обучает векторы токенов, но ничего не требует от вектора текста целиком: ни одно слагаемое не сравнивает два текста, а вектор <code>[CLS]</code> восстановление токенов не использует (в BERT его обучала ещё задача о следующем предложении). Поэтому векторы предобученного BERT на задаче STS, по данным авторов SBERT, уступают простому среднему векторов слов GloVe (см. <a href="#/models/sbert">карточку SBERT</a>), и модели эмбеддингов после MLM дообучают контрастивно.</p>
 <p>Есть вариант MLM, который готовит именно вектор текста, — автокодировщик с узким местом. В RetroMAE токены восстанавливает однослойный декодер, которому доступны вектор <code>[CLS]</code> кодировщика и вход, где скрыта бо́льшая часть токенов. Восстановить текст без информации из вектора нельзя, и она вынужденно собирается в нём. Этот этап и его роль в обучении разобраны в <a href="#/models/bge/bge-training">карточке BGE</a>.</p>
 
+<h2 id="obj-span">Восстановление спанов</h2>
+<p>Восстановление спанов (span corruption) — вариант маскирования для моделей кодировщик-декодер, с которым предобучены T5 и его потомки. Скрываются не отдельные токены, а отрезки. Каждый отрезок во входе заменяется одним служебным токеном-сентинелом, а декодер выписывает только скрытые токены, разделяя их теми же сентинелами.</p>
+<h3>Формула</h3>
+<p>В последовательности \(x\) длины \(L\) скрывается \(m=\operatorname{round}(rL)\) токенов в \(n=\operatorname{round}(m/\mu)\) отрезках средней длины \(\mu\). Видимые и скрытые отрезки чередуются, начиная с видимого, а длины тех и других выбираются случайно. Вход кодировщика \(\tilde x\) — видимые токены, где \(k\)-й скрытый отрезок заменён сентинелом \(s_k\). Цель декодера \(y=(s_1,\text{отрезок}_1,s_2,\text{отрезок}_2,\dots,s_{n+1})\). Функция потерь — перекрёстная энтропия декодера по всем токенам цели, когда на вход декодеру подаётся правильный префикс (teacher forcing):</p>
+<p class="formula">\[\mathcal{L}_{\text{span}}=-\frac{1}{|y|}\sum_{t=1}^{|y|}\log p_{\theta}\bigl(y_t\mid y_{&lt;t},\tilde x\bigr).\]</p>
+<p>У T5 \(r=0.15\) и \(\mu=3\). Для \(L=512\) это \(m=77\) скрытых токенов в \(n=26\) отрезках: вход сокращается до \(512-77+26=461\) токена, а цель занимает \(77+26+1=104\) токена (без завершающего <code>&lt;/s&gt;</code>). Если бы декодер восстанавливал весь текст, цель была бы длиной 512.</p>
+<h3>Чем отличается от MLM</h3>
+<ul>
+  <li><b>Длина ответа неизвестна.</b> В <a href="#/reference/training-objectives/obj-mlm">MLM</a> на месте каждого скрытого токена стоит свой <code>[MASK]</code>, и модель знает, сколько токенов предсказывать. Здесь один сентинел заменяет отрезок любой длины, и декодер сам решает, где отрезок кончается и пора писать следующий сентинел.</li>
+  <li><b>Предсказания зависят друг от друга.</b> MLM предсказывает скрытые токены независимо по выходам кодировщика. Декодер генерирует отрезок слева направо и видит уже выписанные токены цели.</li>
+  <li><b>Сигнал обучения.</b> Потери считаются по всем токенам цели, включая сентинелы. Их около \(0.2L\) — немногим больше, чем 15% позиций в MLM, но вычисления на декодер в несколько раз меньше, чем при восстановлении всего текста.</li>
+</ul>
+<p>Сравнение этой цели с MLM, языковым моделированием и восстановлением порядка слов на одинаковой модели проведено в статье T5; числа — в <a href="#/models/t5/t5-training">карточке T5</a>. BART использует родственную идею зашумления, но восстанавливает весь текст; она будет разобрана вместе с BART.</p>
+
 <h2 id="obj-practice">Функции потерь на практике</h2>
 <h3>Соответствие в sentence-transformers</h3>
 <div class="table-wrap">
@@ -177,6 +192,34 @@ print(chosen.float().mean(), (x[chosen] == 103).float().mean(), (x[chosen] == id
 
 labels = torch.tensor([[-100, 7, -100, 3]])                   # выбраны 2 позиции из 4
 print(mlm_loss(torch.zeros(1, 4, 10), labels))                # tensor(2.3026) = log 10 при равномерном предсказании</code></pre>
+<p>Восстановление спанов в формате T5 — упрощённая версия функции <code>random_spans_noise_mask</code> из репозитория T5: видимые и скрытые отрезки чередуются, начиная с видимого. Вывод получен запуском кода.</p>
+<pre><code>import random
+
+def span_corrupt(tokens, rate=0.15, mean_span=3.0, seed=0):
+    """Скрыть долю rate токенов отрезками средней длины mean_span; вернуть вход и цель в формате T5."""
+    rng = random.Random(seed)
+    L = len(tokens)
+    n_noise = max(1, round(L * rate))
+    n_spans = max(1, round(n_noise / mean_span))
+    def split(total, parts):                       # случайное разбиение total на parts непустых отрезков
+        cuts = sorted(rng.sample(range(1, total), parts - 1)) if parts &gt; 1 else []
+        return [b - a for a, b in zip([0] + cuts, cuts + [total])]
+    noise, keep = split(n_noise, n_spans), split(L - n_noise, n_spans)
+    inp, tgt, i = [], [], 0
+    for k, (keep_len, noise_len) in enumerate(zip(keep, noise)):
+        inp += tokens[i:i + keep_len]; i += keep_len
+        inp.append(f"&lt;extra_id_{k}&gt;"); tgt.append(f"&lt;extra_id_{k}&gt;")
+        tgt += tokens[i:i + noise_len]; i += noise_len
+    tgt.append(f"&lt;extra_id_{n_spans}&gt;")
+    return inp, tgt
+
+words = "the irish sea separates great britain from ireland and links to the atlantic in the north and south".split()
+inp, tgt = span_corrupt(words, rate=0.3, mean_span=2, seed=4)
+print(" ".join(inp))   # the irish sea separates great &lt;extra_id_0&gt; ireland and links to the atlantic in the &lt;extra_id_1&gt;
+print(" ".join(tgt))   # &lt;extra_id_0&gt; britain from &lt;extra_id_1&gt; north and south &lt;extra_id_2&gt;
+
+inp, tgt = span_corrupt([f"t{i}" for i in range(512)])
+print(len(inp), len(tgt))   # 461 104</code></pre>
 <p>В transformers то же делает <code>DataCollatorForLanguageModeling</code>: параметры <code>mlm_probability=0.15</code>, <code>mask_replace_prob=0.8</code> и <code>random_replace_prob=0.1</code> по умолчанию совпадают с BERT, а служебные токены коллатор не выбирает (проверено по исходному коду transformers 5.18).</p>
 
 <h2 id="obj-papers">Ключевые статьи</h2>
@@ -186,6 +229,7 @@ print(mlm_loss(torch.zeros(1, 4, 10), labels))                # tensor(2.3026) =
   <li>Radford et al. <i>Learning Transferable Visual Models From Natural Language Supervision</i>, 2021 — CLIP: симметричная контрастивная функция потерь для пар «изображение — текст».</li>
   <li>Schroff, Kalenichenko, Philbin. <i>FaceNet: A Unified Embedding for Face Recognition and Clustering</i>, 2015 — triplet loss с зазором и подбор полутрудных негативов.</li>
   <li>Devlin, Chang, Lee, Toutanova. <i>BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding</i>, 2019 — маскированное языковое моделирование и правило замены 80/10/10.</li>
+  <li>Raffel et al. <i>Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer</i>, 2019 — восстановление спанов с сентинелами и сравнение целей предобучения на одной модели.</li>
   <li>Hinton, Vinyals, Dean. <i>Distilling the Knowledge in a Neural Network</i>, 2015 — дистилляция через распределение вероятностей учителя с температурой.</li>
   <li>Reimers, Gurevych. <i>Making Monolingual Sentence Embeddings Multilingual using Knowledge Distillation</i>, 2020 — дистилляция векторов через MSE для переноса модели на новые языки.</li>
   <li>Ren et al. <i>RocketQAv2: A Joint Training Method for Dense Passage Retrieval and Passage Re-ranking</i>, 2021 — распределение ре-ранкера по списку кандидатов как мягкая цель для двухбашенного поиска.</li>

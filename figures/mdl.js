@@ -105,3 +105,36 @@ const mdlFunnel = (a0, a1, yb, b0, b1, yt, on) =>
 const mdlFade = (show) => show ? "" : ' opacity="0.22"';
 /* Значок легенды для стрелок */
 const mdlLegendArrow = (cls) => `<svg viewBox="0 0 22 14"><line x1="2" y1="7" x2="20" y2="7" class="${cls}"/></svg>`;
+
+/* Помощники кодировщика-декодера (T5, BART).
+   Строка текстовых токенов-плашек с переносом: toks — [{t, k}], k — "tok" | "sent" (сентинел) | "sp" (служебный)
+   | "hide" (скрываемый) | "on" (выделен). x — центр, y — верх первой строки, maxW — ширина строки.
+   Возвращает svg, центры плашек cs[i] = [x, верх] и общую высоту. */
+function mdlTokChips(x, y, toks, maxW, o = {}){
+  const px = o.px || 10.5, h = o.h || 17, gap = 3, cw = px * 0.6;
+  const ws = toks.map((d) => Math.max(h, d.t.length * cw + 8));
+  const lines = [];
+  let cur = [], curW = 0;
+  ws.forEach((w, i) => {
+    if (cur.length && curW + gap + w > maxW){ lines.push(cur); cur = []; curW = 0; }
+    curW += (cur.length ? gap : 0) + w;
+    cur.push(i);
+  });
+  if (cur.length) lines.push(cur);
+  let svg = "";
+  const cs = [];
+  lines.forEach((ln, r) => {
+    const tw = ln.reduce((a, i) => a + ws[i], 0) + gap * (ln.length - 1), yy = y + r * (h + 4);
+    let xx = x - tw / 2;
+    ln.forEach((i) => {
+      const k = toks[i].k || "tok";
+      svg += `<rect x="${f1(xx)}" y="${f1(yy)}" width="${f1(ws[i])}" height="${h}" rx="4" class="mdl-tc ${k}"/>`;
+      svg += `<text x="${f1(xx + ws[i] / 2)}" y="${f1(yy + h / 2)}" class="mdl-tct ${k}" text-anchor="middle">${mdlEsc(toks[i].t)}</text>`;
+      cs[i] = [xx + ws[i] / 2, yy];
+      xx += ws[i] + gap;
+    });
+  });
+  return { svg, cs, height: lines.length * (h + 4) - 4 };
+}
+/* Стрелка cross-attention: от выходов кодировщика к декодеру */
+const mdlCross = (x1, y1, x2, y2, on) => vlArrow(x1, y1, x2, y2, on ? "mdl-cross on mdl-flow" : "mdl-cross");

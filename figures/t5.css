@@ -1,0 +1,5 @@
+/* Иллюстрация раздела models/t5 (префикс классов: t5); общие классы схем — figures/mdl.css. */
+
+.fig .t5-p { fill: var(--ink); font-size: 9.5px; font-variant-numeric: tabular-nums; }
+.fig .mdl-chipt.t5-txt { dominant-baseline: central; }
+.t5-seg { flex-wrap: wrap; }
