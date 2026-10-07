@@ -1,0 +1,25 @@
+/* Иллюстрация раздела models/bge (префикс классов: bge); общие классы схем — figures/mdl.css. */
+
+/* токены запроса и лексические веса */
+.fig .bge-tt { fill: var(--ink); font-size: 10.5px; }
+.fig .bge-tt.sp { fill: var(--muted); }
+.fig .mdl-tok.bge-hit { fill: var(--fig-accent); }
+.fig .bge-w { fill: color-mix(in srgb, var(--ink) 28%, var(--bg)); }
+.fig .bge-w.hit { fill: var(--fig-accent); }
+.fig .bge-wv { fill: var(--ink); font-size: 9.5px; font-variant-numeric: tabular-nums; }
+.fig .bge-wv.hit { fill: var(--fig-accent); font-weight: 600; }
+.fig .bge-base { stroke: var(--fig-edge); stroke-width: 1; }
+.fig .mdl-barf.bge-pick { stroke: var(--chapter-ink); stroke-width: 2.2; }
+.fig .bge-score { fill: var(--muted); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fig .bge-score.on { fill: var(--chapter-ink); }
+
+/* распределения по кандидатам: цвет по роли */
+.fig .bge-bar { fill: color-mix(in srgb, var(--ink) 28%, var(--bg)); }
+.fig .bge-bar.pos { fill: var(--mdl-pos); }
+.fig .bge-bar.hard { fill: var(--mdl-hard); }
+.fig .mdl-box.teacher { stroke: var(--mdl-teacher); stroke-dasharray: 5 3; }
+.fig .mdl-box.teacher.on { fill: color-mix(in srgb, var(--mdl-teacher) 12%, var(--bg)); stroke-width: 2.2; }
+
+/* значки легенды и перенос переключателя */
+.mdl-key.bge-shared { background: var(--fig-accent); }
+.bge-seg { flex-wrap: wrap; }

@@ -250,6 +250,24 @@
             "multi-vector retrieval",
             "MultiVectorEncoder"
           ]
+        },
+        {
+          "id": "bge",
+          "title": "BGE: RetroMAE, инструкции и три выхода BGE-M3",
+          "status": "done",
+          "summary": "Семейство BGE (v1/v1.5, BGE-M3): вектор [CLS] и инструкция только у запроса; рецепт C-Pack — RetroMAE (асимметричное маскирование, однослойный декодер восстанавливает текст по [CLS]), контрастное обучение на 100 млн слабых пар с батчем 19 200, дообучение с инструкциями и трудными негативами; данные таблицами по этапам. BGE-M3 на XLM-R до 8192 токенов: плотный вектор, лексические веса ReLU и векторы токенов (MaxSim/N), самодистилляция от интегральной оценки, длинные документы и MCLS, результаты MIRACL и MLDR. Схема bge-flow (числа model card и условные). Тихие ошибки: инструкция не добавляется сама, CLS вместо среднего, предел 512 в BGEM3FlagModel, только плотный выход в sentence-transformers и случайная проекция в MultiVectorEncoder, разные шкалы оценок, токены SentencePiece вместо слов.",
+          "concepts": [
+            "BGE",
+            "RetroMAE",
+            "C-Pack",
+            "CLS pooling",
+            "query instruction",
+            "BGE-M3",
+            "sparse lexical weights",
+            "multi-vector retrieval",
+            "self-knowledge distillation",
+            "MCLS"
+          ]
         }
       ]
     },
@@ -303,18 +321,18 @@
           "id": "training-objectives",
           "title": "Обучение моделей",
           "status": "draft",
-          "summary": "Общие функции потерь, на которые ссылаются карточки моделей: InfoNCE (градиент, негативы из батча и трудные негативы, симметричный вариант, температура; дополнительно — оценка взаимной информации с её условиями выборки и пределом log N), triplet loss с зазором и его связь с InfoNCE, дистилляция векторов через MSE (градиент среднего, отсутствие взаимодействия примеров, что гарантирует и чего нет) и дистилляция оценок от cross-encoder через KL (мягкие метки, ложные негативы, оптимум суммы с InfoNCE, две температуры). Соответствие классам sentence-transformers 6.1 и реализация на PyTorch. MLM, span corruption и denoising добавляются по мере появления моделей.",
+          "summary": "Общие функции потерь, на которые ссылаются карточки моделей: InfoNCE (градиент, негативы из батча и трудные негативы, симметричный вариант, температура; дополнительно — оценка взаимной информации с её условиями выборки и пределом log N), triplet loss с зазором и его связь с InfoNCE, дистилляция векторов через MSE (градиент среднего, отсутствие взаимодействия примеров, что гарантирует и чего нет) и дистилляция оценок от cross-encoder через KL (мягкие метки, ложные негативы, оптимум суммы с InfoNCE, две температуры). Соответствие классам sentence-transformers 6.1 и реализация на PyTorch. Маскированное языковое моделирование: формула, правило замены 80/10/10, почему MLM не даёт вектора текста, вариант с узким местом (RetroMAE) и проверенный код маскирования. Span corruption и denoising добавляются по мере появления моделей.",
           "concepts": [
             "contrastive loss",
             "InfoNCE",
             "in-batch negatives",
-            "symmetric InfoNCE",
             "temperature",
             "triplet loss",
             "embedding distillation",
             "score distillation",
             "KL divergence",
-            "cross-encoder teacher"
+            "cross-encoder teacher",
+            "masked language modeling"
           ]
         }
       ]
