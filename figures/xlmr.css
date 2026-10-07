@@ -1,0 +1,14 @@
+/* Иллюстрация раздела models/xlm-r (префикс классов: xlmr). */
+
+.fig .xlmr-row { fill: var(--tint); }
+.fig .xlmr-grid { stroke: var(--rule); stroke-width: 1; }
+.fig .xlmr-tick { fill: var(--muted); font-size: 10px; text-anchor: middle; }
+.fig .xlmr-head { fill: var(--muted); font-size: 10.5px; }
+.fig .xlmr-lang { fill: var(--ink); font-size: 11.5px; text-anchor: end; dominant-baseline: central; }
+.fig .xlmr-lang.on { fill: var(--chapter-ink); font-weight: 600; }
+.fig .xlmr-p { fill: var(--bg); stroke: var(--muted); stroke-width: 1.6; }
+.fig .xlmr-q { fill: var(--chapter); stroke: var(--chapter-ink); stroke-width: 1; }
+.fig line.xlmr-arr { stroke: var(--chapter-ink); stroke-width: 1.3; }
+.fig path.xlmr-arr { fill: var(--chapter-ink); stroke: none; }
+.fig .xlmr-n { fill: var(--ink); font-size: 11px; text-anchor: end; dominant-baseline: central; font-variant-numeric: tabular-nums; }
+.fig .xlmr-n.warn { fill: var(--fig-accent); font-weight: 600; }
