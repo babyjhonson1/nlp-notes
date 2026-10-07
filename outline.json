@@ -149,6 +149,24 @@
             "PagedAttention",
             "vLLM"
           ]
+        },
+        {
+          "id": "paged-attention",
+          "title": "PagedAttention и prefix caching",
+          "status": "done",
+          "summary": "Почему непрерывный резерв KV-cache под максимальную длину теряет большую часть памяти (резерв, внутренняя и внешняя фрагментация) и как PagedAttention устраняет это блоками и таблицей блоков с потерями не больше одного блока; цена косвенной адресации и выбор размера блока. Общие блоки со счётчиком ссылок для параллельной выборки и beam search, prefix caching через цепочку хешей блоков, LRU-вытеснение и RadixAttention, следствия для промптов, агентного цикла и RAG, изоляция кеша; параметры и метрики vLLM 0.31.",
+          "concepts": [
+            "PagedAttention",
+            "block table",
+            "фрагментация памяти",
+            "reference count",
+            "copy-on-write",
+            "prefix caching",
+            "хеш блока",
+            "LRU-вытеснение",
+            "RadixAttention",
+            "cache_salt"
+          ]
         }
       ]
     },
