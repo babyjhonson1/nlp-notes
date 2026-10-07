@@ -1,0 +1,34 @@
+/* agents/agent-loop: только стили иллюстрации цикла. */
+.agl-stage { display: grid; gap: 12px; }
+.agl-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; }
+.agl-heading b { color: var(--chapter-ink); font-size: 14px; }
+.agl-heading > span { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.agl-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 12px; align-items: start; min-height: 540px; }
+.agl-panel { border: 1px solid var(--rule); border-radius: 8px; padding: 12px; min-width: 0; background: var(--bg); }
+.fig .agl-panel h3 { margin: 0 0 10px; font: 600 13px var(--ui); color: var(--ink); }
+.agl-fixed { margin: 8px 0; color: var(--muted); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.agl-fixed code { font-size: 11px; }
+.agl-history { list-style: none; display: grid; gap: 8px; margin: 12px 0 0; padding: 0; }
+.agl-entry { display: grid; gap: 4px; border-left: 3px solid var(--rule); padding: 5px 0 5px 9px; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.agl-entry b { font-size: 11px; color: var(--muted); }
+.agl-call { border-color: var(--g1); }
+.agl-observation { border-color: var(--g2); }
+.agl-actors { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.agl-actors span { border: 1px solid var(--rule); border-radius: 5px; padding: 4px 7px; font-size: 12px; color: var(--muted); }
+.agl-actors [data-actor="model"] { --agl-color: var(--g1); }
+.agl-actors [data-actor="runtime"] { --agl-color: var(--g3); }
+.agl-actors [data-actor="tool"] { --agl-color: var(--g2); }
+.agl-actors .agl-active { border-color: var(--agl-color); color: var(--ink); background: color-mix(in srgb, var(--agl-color) 15%, var(--bg)); font-weight: 600; }
+.agl-decision { margin: 0; }
+.agl-decision dt { color: var(--muted); font-size: 11px; margin-top: 12px; }
+.agl-decision dd { margin: 4px 0 0; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.agl-select { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+.agl-select select { max-width: 100%; font: inherit; padding: 5px 7px; border: 1px solid var(--rule); border-radius: 5px; background: var(--bg); color: var(--ink); }
+.agl-key { display: inline-block; width: 14px; height: 10px; border-radius: 2px; }
+.agl-model { background: var(--g1); }
+.agl-runtime { background: var(--g3); }
+.agl-tool { background: var(--g2); }
+@media (max-width: 620px) {
+  .agl-grid { grid-template-columns: minmax(0, 1fr); min-height: 870px; }
+  .agl-panel { padding: 10px; }
+}
