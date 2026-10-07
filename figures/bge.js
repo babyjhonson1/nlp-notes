@@ -1,6 +1,5 @@
-/* Иллюстрация раздела models/bge: три выхода BGE-M3 из одних выходов XLM-R и самодистилляция.
-   Помощники — figures/mdl.js. Числа режима «Три выхода» — из model card BGE-M3 (use_fp16=True),
-   числа режима «Самодистилляция» условные. */
+/* BGE: небольшие схемы для отдельных этапов. Помощники — mdl.js, common.js, vl.js.
+   Прямой проход — числа model card; RetroMAE и самодистилляция — условные примеры. */
 
 function mountBgeFlow(box){
   // запрос из model card и его токены SentencePiece (проверено токенизатором BGE-M3)
@@ -15,37 +14,14 @@ function mountBgeFlow(box){
           shared: ["is"], dense: 0.347412109375, lex: 0.00879669189453125, mul: 0.4621465802192688 }
   };
   const WMIX = [0.4, 0.2, 0.4];   // веса из примера compute_score в model card
-  // самодистилляция: условные оценки (уже делённые на температуру) для четырёх кандидатов
-  const DQ = "забыл пароль, почта не открывается";
-  const CAND = [
-    { t: "доступ", role: "pos" }, { t: "смена пароля", role: "hard" }, { t: "соцсети", role: "" }, { t: "тарифы", role: "" }
-  ];
-  const SC = { dense: [5.1, 4.8, 3.2, 1.0], lex: [2.6, 2.7, 0.6, 0.2], mul: [5.4, 4.9, 3.0, 1.2] };
-  const MODES = {
-    out: { tab: "Три выхода", steps: ["вход", "XLM-R", "плотный вектор", "лексические веса", "векторы токенов", "итоговая оценка"] },
-    skd: { tab: "Самодистилляция", steps: ["три оценки", "учитель", "функция потерь", "обратный проход"] }
-  };
-  let mode = "out", doc = "p1";
-
-  const softmax = (r) => { const mx = Math.max(...r), e = r.map((x) => Math.exp(x - mx)), t = e.reduce((a, b) => a + b, 0); return e.map((x) => x / t); };
-  const ce = (target, p) => -target.reduce((a, t, i) => a + (t > 0 ? t * Math.log(p[i]) : 0), 0);
-  function distill(){
-    const inter = SC.dense.map((d, i) => d + 0.3 * SC.lex[i] + SC.mul[i]);
-    const P = { dense: softmax(SC.dense), lex: softmax(SC.lex), mul: softmax(SC.mul), inter: softmax(inter) };
-    const hard = [1, 0, 0, 0];
-    const L = (ce(hard, P.dense) + 0.1 * ce(hard, P.lex) + ce(hard, P.mul) + ce(hard, P.inter)) / 4;
-    const Ls = (ce(P.inter, P.dense) + 0.1 * ce(P.inter, P.lex) + ce(P.inter, P.mul)) / 3;
-    return { inter, P, L, Ls, final: (L + Ls) / 2 };
-  }
+  let doc = "p1";
+  const steps = ["вход", "кодировщик", "плотный выход", "лексический выход", "многовекторный выход", "сумма оценок"];
   const mix = (d) => (WMIX[0] * d.dense + WMIX[1] * d.lex + WMIX[2] * d.mul) / (WMIX[0] + WMIX[1] + WMIX[2]);
   const n2 = (x) => x < 0.01 ? mdlNum(x, 4) : mdlNum(x, 3);
 
   box.innerHTML = `
-    <div class="fig-stage"><svg tabindex="0" role="img" aria-label="Схема BGE-M3: три выхода одного кодировщика и самодистилляция"></svg></div>
+    <div class="fig-stage"><svg tabindex="0" role="img" aria-label="Три выхода BGE-M3: только прямой проход"></svg></div>
     <div class="fig-row">
-      <div class="fig-tabs mdl-tabs" role="tablist" aria-label="Режим">${Object.entries(MODES).map(([k, m]) => `<button type="button" role="tab" data-mode="${k}" aria-selected="${k === mode}">${m.tab}</button>`).join("")}</div>
-    </div>
-    <div class="fig-row" data-row="out">
       <span class="fig-seg bge-seg">документ<span class="fig-tabs" role="tablist" aria-label="Документ">
         <button type="button" role="tab" data-doc="p1" aria-selected="true">о BGE-M3</button>
         <button type="button" role="tab" data-doc="p2" aria-selected="false">о BM25</button>
@@ -55,14 +31,9 @@ function mountBgeFlow(box){
     <p class="fig-say" aria-live="polite"></p>
     <div class="fig-legend">${legend([
       [mdlLegendArrow("vl-arr on"), "прямой проход"],
-      [mdlLegendArrow("mdl-grad"), "градиент"],
-      ['<i class="mdl-key bge-shared"></i>', "токен есть в документе"],
-      ['<i class="mdl-key pos"></i>', "позитив"],
-      ['<i class="mdl-key hard"></i>', "трудный негатив"],
-      ['<i class="mdl-key teacher"></i>', "учитель"]
+      ['<i class="mdl-key bge-shared"></i>', "токен есть в документе"]
     ])}</div>`;
   const stage = box.querySelector(".fig-stage"), svg = stage.querySelector("svg"), say = box.querySelector(".fig-say");
-  const rows = [...box.querySelectorAll("[data-row]")];
   const H = 470;
 
   /* ---------- три выхода ---------- */
@@ -131,89 +102,27 @@ function mountBgeFlow(box){
   }
   const show = (step, k) => step >= k;
 
-  /* ---------- самодистилляция ---------- */
-  function drawSkd(step, W){
-    const st = distill(), isBack = step === 3, narrow = W < 480;
-    const cw = (W - 24) / 3, cx = [12 + cw / 2, W / 2, W - 12 - cw / 2], base = H - 66, bh = 118;
-    const top = base - bh - 40, ly = 22, tC = Math.round((ly + 17 + top) / 2);
-    let s = "";
-    const chart = (x, ps, title, on) => {
-      const w = Math.min(cw - 18, 150), g = 5, bw = (w - 3 * g) / 4, xl = x - w / 2;
-      let t = `<rect x="${f1(x - cw / 2 + 3)}" y="${f1(top)}" width="${f1(cw - 6)}" height="${bh + 62}" rx="8" class="mdl-box${on ? " on" : ""}${isBack ? " grad" : ""}"/>`;
-      t += `<text x="${f1(x)}" y="${f1(top + 16)}" class="mdl-boxt">${title}</text>`;
-      ps.forEach((p, i) => {
-        const h = Math.max(1.5, bh * p), xb = xl + i * (bw + g);
-        t += `<rect x="${f1(xb)}" y="${f1(base - h)}" width="${f1(bw)}" height="${f1(h)}" rx="2" class="bge-bar ${CAND[i].role}"/>`;
-        t += `<text x="${f1(xb + bw / 2)}" y="${f1(base - h - 6)}" class="bge-wv" text-anchor="middle">${mdlNum(p, 2)}</text>`;
-        t += `<text x="${f1(xb + bw / 2)}" y="${f1(base + 11)}" class="bge-wv" text-anchor="middle">${"d" + (i + 1)}</text>`;
-      });
-      return t;
-    };
-    s += chart(cx[0], st.P.dense, "плотный", step === 0);
-    s += chart(cx[1], st.P.lex, "лексический", step === 0);
-    s += chart(cx[2], st.P.mul, narrow ? "векторы" : "векторы токенов", step === 0);
-    s += `<text x="${f1(W / 2)}" y="${f1(H - 26)}" class="mdl-cap sm" text-anchor="middle">${mdlEsc(CAND.map((c, i) => `d${i + 1} — ${c.t}`).join(", "))}</text>`;
-    s += `<text x="${f1(W / 2)}" y="${f1(H - 10)}" class="mdl-cap sm" text-anchor="middle">запрос «${DQ}»; оценки условные</text>`;
-    // функция потерь
-    s += `<g${mdlFade(step >= 2)}>`;
-    const lw = Math.min(cw - 6, 150);
-    s += mdlBox(cx[0], ly, lw, 34, [`L = ${mdlNum(st.L, 2)}`, "по разметке"], step === 2 ? "on" : "");
-    s += mdlBox(cx[1], ly, lw, 34, [`L′ = ${mdlNum(st.Ls, 2)}`, "по учителю"], step === 2 ? "on" : "");
-    s += mdlBox(cx[2], ly, lw, 34, [`итог = ${mdlNum(st.final, 2)}`, "(L + L′) / 2"], "loss" + (step === 2 ? " on" : ""));
-    s += "</g>";
-    // обратный проход: градиент от функции потерь к трём выходам, мимо учителя
-    if (isBack) cx.forEach((x) => { s += mdlGrad(x, ly + 19, x, top - 3); });
-    // учитель: на шаге градиента сдвинут между стрелками
-    s += `<g${mdlFade(step >= 1)}>`;
-    if (isBack){
-      s += mdlBox((cx[0] + cx[1]) / 2, tC, cw - 16, 34, ["учитель", "без градиента"], "teacher");
-    } else {
-      const tw = Math.min(W - 24, 300);
-      s += mdlBox(W / 2, tC, tw, 34, [mdlSub("учитель: softmax(s", "inter", ")"), CAND.map((_, i) => mdlNum(st.P.inter[i], 2)).join("   ")], "teacher" + (step === 1 ? " on" : ""));
-      if (step === 1) cx.forEach((x) => { s += mdlFwd(x, top - 3, W / 2 + (x - W / 2) * 0.4, tC + 19, true); });
-      if (step === 2) s += mdlFwd(W / 2, tC - 19, cx[1], ly + 19, true);
-    }
-    s += "</g>";
-    return s;
-  }
-
   function draw(step){
     const W = cbFit(stage, 340, 680);
-    const s = mode === "out" ? drawOut(step, W) : drawSkd(step, W);
+    const s = drawOut(step, W);
     svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
     svg.innerHTML = s;
-    rows.forEach((r) => { r.hidden = r.dataset.row !== mode; });
     say.innerHTML = explain(step);
   }
 
   function explain(step){
-    if (mode === "out"){
       const D = DOCS[doc], one = doc === "p1";
       return [
         `<b>Вход.</b> Запрос из model card BGE-M3 токенизатор SentencePiece делит на 9 токенов: <code>&lt;s&gt;</code>, What, is, B, GE, M, 3, ?, <code>&lt;/s&gt;</code>. Инструкции у запроса нет. Документ кодируется той же сетью; ${one ? "в описании BGE-M3 есть токены is, B, GE, M и 3 из запроса" : "в описании BM25 из токенов запроса есть только is: BM25 делится на BM и 25"}.`,
         "<b>XLM-R.</b> Кодировщик — XLM-RoBERTa-large, расширенный до 8192 позиций и предобученный RetroMAE. Все три выхода считаются из одной матрицы \\(H\\) выходов последнего слоя, поэтому достаточно одного прохода. Цвета ячеек условные.",
         `<b>Плотный вектор.</b> Берётся выход первого токена <code>&lt;s&gt;</code> (у XLM-R он играет роль <code>[CLS]</code>) и нормируется: \\(e=\\operatorname{norm}(H[0])\\). Оценка — косинус с вектором документа: \\(${n2(D.dense)}\\). Числа этого режима — из примера в model card.`,
-        `<b>Лексические веса.</b> Каждый токен получает вес \\(\\operatorname{ReLU}(W_{\\text{lex}}^{\\top}H[i])\\); у <code>&lt;s&gt;</code> и <code>&lt;/s&gt;</code> вес обнулён. Веса запроса в model card: у GE и 3 около \\(0.25\\)–\\(0.27\\), у What и is — около \\(0.08\\). Оценка складывает произведения весов только по токенам, которые есть в обоих текстах: ${one ? "is, B, GE, M и 3 дают \\(0.196\\)" : "совпадает только is, и оценка всего \\(0.0088\\)"}.`,
-        `<b>Векторы токенов.</b> Выходы всех токенов, кроме <code>&lt;s&gt;</code>, проецируются матрицей \\(W_{\\text{mul}}\\) размером \\(1024\\times1024\\) и нормируются. Для каждого из 8 векторов запроса берётся лучший косинус с векторами документа, и максимумы усредняются: \\(${n2(D.mul)}\\). Это MaxSim ColBERT, делённый на длину запроса.`,
+        `<b>Лексические веса.</b> Каждый токен получает вес через линейную проекцию со смещением и ReLU; у <code>&lt;s&gt;</code> и <code>&lt;/s&gt;</code> вес обнулён. Веса запроса в model card: у GE и 3 около \\(0.25\\)–\\(0.27\\), у What и is — около \\(0.08\\). Оценка складывает произведения весов только по токенам, которые есть в обоих текстах: ${one ? "is, B, GE, M и 3 дают \\(0.196\\)" : "совпадает только is, и оценка всего \\(0.0088\\)"}.`,
+        `<b>Векторы токенов.</b> Выходы всех токенов, кроме <code>&lt;s&gt;</code>, проецируются линейным слоем с матрицей \\(W_{\\text{mul}}\\) размером \\(1024\\times1024\\) и смещением, затем нормируются. Для каждого из 8 векторов запроса берётся лучший косинус с векторами документа, и максимумы усредняются: \\(${n2(D.mul)}\\). Это MaxSim ColBERT, делённый на длину запроса.`,
         `<b>Итоговая оценка.</b> Оценки складываются с весами из примера model card, \\((0.4,\\,0.2,\\,0.4)\\), и делятся на сумму весов: \\(${mdlNum(mix(D), 3)}\\). У разных оценок разная шкала: лексическая здесь ${one ? "втрое ниже плотной, хотя совпали почти все токены" : "почти нулевая"}. Поэтому веса подбирают на своих данных.`
       ][step];
-    }
-    const st = distill(), pi = st.P.inter.map((x) => mdlNum(x, 2));
-    return [
-      `<b>Три оценки.</b> Для запроса и четырёх кандидатов каждый выход даёт свою оценку, а softmax превращает её в распределение по кандидатам; d1 — размеченный позитив. Плотный выход и векторы токенов ставят позитив первым, а лексический почти не различает d1 и d2: в обоих есть «пароль», а «почта» и «почту» для него разные токены. К тому же в начале обучения его голова инициализирована случайно. Оценки условные.`,
-      `<b>Учитель.</b> Интегральная оценка \\(s_{\\text{inter}}=s_{\\text{dense}}+0.3\\,s_{\\text{lex}}+s_{\\text{mul}}\\) объединяет три выхода, и её softmax — мягкая цель для каждого: \\(${pi.join("\\), \\(")}\\). Учитель — та же модель, никакой внешней сети здесь нет.`,
-      `<b>Функция потерь.</b> \\(\\mathcal{L}\\) — InfoNCE по разметке для трёх выходов и их суммы с весами \\(1,\\,0.1,\\,1,\\,1\\), делённая на 4: \\(${mdlNum(st.L, 2)}\\). \\(\\mathcal{L}'\\) — перекрёстная энтропия каждого выхода с распределением учителя, с весами \\(1,\\,0.1,\\,1\\), делённая на 3: \\(${mdlNum(st.Ls, 2)}\\). Итог — их среднее, \\(${mdlNum(st.final, 2)}\\). Учитель отдаёт «смене пароля» \\(${pi[1]}\\), поэтому по \\(\\mathcal{L}'\\) её не нужно отталкивать до нуля, как требует разметка.`,
-      "<b>Обратный проход.</b> Градиент идёт в три головы и в общий кодировщик. Цель учителя берётся с отключённым градиентом: учитель не подстраивается под учеников, а слабый в начале лексический выход тянется к согласованному мнению всех трёх."
-    ][step];
   }
 
-  const player = vlPlayer(box, { count: () => MODES[mode].steps.length, draw, label: (i, n) => `шаг ${i + 1} из ${n}: ${MODES[mode].steps[i]}`, interval: 2600 });
-  box.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
-    mode = b.dataset.mode;
-    box.querySelectorAll("[data-mode]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
-    player.stop();
-    player.go(Math.min(player.i, MODES[mode].steps.length - 1));
-  }));
+  const player = vlPlayer(box, { count: () => steps.length, draw, label: (i, n) => `шаг ${i + 1} из ${n}: ${steps[i]}`, interval: 2600 });
   box.querySelectorAll("[data-doc]").forEach((b) => b.addEventListener("click", () => {
     doc = b.dataset.doc;
     box.querySelectorAll("[data-doc]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
@@ -224,6 +133,153 @@ function mountBgeFlow(box){
   return () => { player.stop(); unobserve(); };
 }
 
+/* Оболочка коротких проигрывателей: рисунок → управление → пояснение. */
+function bgePlayer(box, label, steps, draw, explain, extra = ""){
+  box.innerHTML = '<div class="fig-stage"><svg tabindex="0" role="img" aria-label="' + escapeHtml(label) + '"></svg></div>' +
+    vlControls(extra) + '<p class="fig-say" aria-live="polite"></p><div class="fig-legend">' +
+    legend([[mdlLegendArrow("vl-arr on"), "прямой проход"], [mdlLegendArrow("mdl-grad"), "градиент"],
+      ['<i class="mdl-key teacher"></i>', "цель обучения"]]) + '</div>';
+  const stage = box.querySelector(".fig-stage"), svg = stage.querySelector("svg"), say = box.querySelector(".fig-say");
+  const paint = i => {
+    const frame = draw(i, cbFit(stage, 340, 680));
+    svg.setAttribute("viewBox", "0 0 " + frame.width + " " + frame.height);
+    svg.innerHTML = frame.svg;
+    say.innerHTML = explain(i);
+  };
+  const player = vlPlayer(box, { count: () => steps.length, draw: paint,
+    label: (i, n) => "шаг " + (i + 1) + " из " + n + ": " + steps[i], interval: 3000 });
+  player.paint();
+  const unobserve = cbResize(stage, () => paint(player.i));
+  return { player, cleanup: () => { player.stop(); unobserve(); } };
+}
+
+function mountBgeRetroMae(box){
+  const words = ["Без", "почты", "доступ", "восстанавливают", "через", "поддержку"];
+  const encMasked = [2, 4], decMasked = [1, 3, 5];
+  const visible = { 1: [0, 4, 5], 5: [0, 2, 3] };
+  let target = 1;
+  const row = (x, y, width, mask) => mdlTokChips(x, y,
+    words.map((t, i) => ({ t: mask.includes(i) ? "[MASK]" : t, k: mask.includes(i) ? "hide" : "tok" })),
+    width, { px: 11, h: 20 }).svg;
+  const draw = (step, W) => {
+    const c = W / 2;
+    let s = "";
+    if (step < 2){
+      s += mdlLines(c, 20, ["Условный текст: слова показаны как токены"], "mdl-cap sm");
+      s += row(c, 30, W - 40, []);
+      const a = W / 4, b = W * 3 / 4, col = W / 2 - 24;
+      s += mdlLines(a, 339, ["Вход кодировщика"], "mdl-cap sm");
+      s += row(a, 349, col, encMasked);
+      s += mdlTower(a, 242, col, 74, { label: "Кодировщик", layers: 2, layerNames: ["…", "…"], cls: "on" });
+      s += mdlFwd(a, 335, a, 319, true);
+      s += mdlBox(a, 211, col, 32, ["Вектор [CLS]", "из испорченного текста"], "on");
+      s += mdlFwd(a, 240, a, 230, true);
+      s += "<g" + mdlFade(step === 1) + ">";
+      s += mdlLines(b, 339, ["Вход декодера"], "mdl-cap sm");
+      s += row(b, 349, col, decMasked);
+      s += mdlBox(b, 273, col, 56, ["Декодер", "один слой"], step === 1 ? "on" : "");
+      s += mdlFwd(b, 335, b, 304, step === 1);
+      s += mdlFwd(a + col / 2, 211, b, 241, step === 1);
+      s += mdlBox(b, 143, col, 48, ["Восстановить", "позиции 2, 4, 6"], "teacher");
+      s += mdlFwd(b, 243, b, 172, step === 1);
+      s += "</g>";
+      if (step === 1) s += mdlGrad(b - col / 2 + 5, 170, a + 20, 192);
+      s += mdlLines(c, 465, [step ? "Скрытые позиции предсказываются параллельно" : "Маски двух входов выбираются независимо"], "mdl-cap sm");
+      return { svg: s, width: W, height: 482 };
+    }
+    s += mdlBox(c, 36, W - 48, 40, ["Улучшенное декодирование", "Маска внимания, не строка [MASK]"], "on");
+    s += mdlBox(c, 96, W - 80, 36, ["Вектор [CLS] + позиция " + (target + 1)], "on");
+    s += mdlFwd(c, 117, c, 143, true);
+    const toks = words.map((t, i) => ({ t, k: i === target ? "hide" : visible[target].includes(i) ? "on" : "sp" }));
+    s += mdlTokChips(c, 151, toks, W - 40, { px: 11, h: 22 }).svg;
+    s += mdlLines(c, 223, ["Выделены доступные токены; целевой закрыт"], "mdl-cap sm");
+    s += mdlBox(c, 271, W - 80, 40, ["Распределение по словарю", "в позиции " + (target + 1)], "on");
+    s += mdlFwd(c, 230, c, 247, true);
+    s += mdlBox(c, 335, W - 80, 38, ["Правильный токен: «" + words[target] + "»"], "teacher");
+    s += mdlGrad(c - (W - 80) / 2 - 8, 320, c - (W - 80) / 2 - 8, 114);
+    s += mdlLines(c, 388, ["Все позиции параллельно; показана одна"], "mdl-cap sm");
+    return { svg: s, width: W, height: 482 };
+  };
+  const explain = step => [
+    "<b>Кодировщик.</b> Часть слов скрыта, но общий смысл ещё доступен. Берём только выход <code>[CLS]</code>. Из кодировщика к декодеру не передаются все токенные состояния.",
+    "<b>Базовый декодер.</b> Другая маска скрыла «почты», «восстанавливают», «поддержку». Декодер предсказывает исходный токен в каждой из этих позиций за один проход. Видит разрешённый контекст с обеих сторон; уже предсказанные слова во вход не подставляются. Ошибка проходит через вектор в кодировщик.",
+    "<b>Своя маска для каждой позиции.</b> Сейчас цель — «" + words[target] + "» в позиции \\(" + (target + 1) +
+      "\\). Доступны <code>[CLS]</code>, позиция и токены «" + visible[target].map(i => words[i]).join("», «") +
+      "». Сам целевой токен в прямом контексте закрыт. Переключатель показывает другую строку внимания того же прохода, а не следующий шаг авторегрессии."
+  ][step];
+  const ctl = bgePlayer(box, "RetroMAE: восстановление токенов без авторегрессии",
+    ["вектор текста", "базовое восстановление", "маска для каждой позиции"], draw, explain,
+    '<span class="fig-seg">Позиция на шаге 3 <button type="button" class="fig-btn" data-target="1" aria-pressed="true">2</button><button type="button" class="fig-btn" data-target="5" aria-pressed="false">6</button></span>');
+  box.querySelectorAll("[data-target]").forEach(b => b.addEventListener("click", () => {
+    target = Number(b.dataset.target);
+    box.querySelectorAll("[data-target]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    ctl.player.stop(); ctl.player.go(2);
+  }));
+  return ctl.cleanup;
+}
+
+// Логиты условного примера из текста: температура уже учтена.
+const BGE_KD_LOGITS = { dense: [2, 1, 0], lex: [1, 1.5, 0], mul: [2, 0.5, 0] };
+function bgeSoftmax(z){
+  const mx = Math.max(...z), e = z.map(x => Math.exp(x - mx)), total = e.reduce((a, b) => a + b, 0);
+  return e.map(x => x / total);
+}
+function bgeDistillExample(){
+  const z = BGE_KD_LOGITS;
+  const ensemble = z.dense.map((v, i) => v + 0.3 * z.lex[i] + z.mul[i]);
+  const teacher = bgeSoftmax(ensemble);
+  const probs = Object.fromEntries(Object.entries(z).map(([k, v]) => [k, bgeSoftmax(v)]));
+  return { ensemble, teacher, probs, gradient: probs.lex.map((p, i) => p - teacher[i]) };
+}
+function mountBgeDistill(box){
+  const st = bgeDistillExample();
+  const row = (W, y, title, values, cls = "") => {
+    const width = W - 44, cell = width / 3;
+    let s = mdlLines(W / 2, y, [title], "mdl-cap sm");
+    values.forEach((v, i) => {
+      const x = 22 + cell * (i + 0.5);
+      s += mdlBox(x, y + 32, cell - 8, 35, [mdlNum(v, 3)], cls);
+    });
+    return s;
+  };
+  const draw = (step, W) => {
+    let s = mdlLines(W / 2, 22, ["Один запрос, одни кандидаты для всех выходов"], "mdl-cap sm");
+    const cell = (W - 44) / 3;
+    ["1: поддержка (+)", "2: письмо (−)", "3: тарифы (−)"].forEach((label, i) => {
+      s += mdlLines(22 + cell * (i + 0.5), 53, [label], "mdl-cap sm");
+    });
+    if (step === 0) {
+      s += row(W, 90, "Плотный выход", st.probs.dense);
+      s += row(W, 169, "Лексический выход — ошибается", st.probs.lex, "on");
+      s += row(W, 248, "Многовекторный выход", st.probs.mul);
+      return { svg: s, width: W, height: 402 };
+    }
+    s += row(W, 90, "Цель: softmax смеси, копия без градиента", st.teacher, "teacher");
+    if (step === 1){
+      s += mdlBox(W / 2, 214, W - 60, 54, ["Не отдельная сеть", "Цель вычислена из этого же прохода"], "teacher");
+      s += mdlFwd(W / 2, 148, W / 2, 182, true);
+    } else {
+      s += row(W, 171, "Ученик: лексический выход", st.probs.lex, "on");
+      s += row(W, 252, "Градиент: ученик минус цель", st.gradient, "grad");
+      if (step === 3) {
+        s += mdlBox(W / 2, 357, W - 52, 50, ["Обновить головы и кодировщик", "На следующем шаге пересчитать цель"], "grad");
+        s += mdlGrad(W / 2, 303, W / 2, 329);
+      }
+    }
+    return { svg: s, width: W, height: 402 };
+  };
+  const explain = step => [
+    "<b>Разметка уже обучает выходы.</b> Кандидат 1 — позитив. Плотный и многовекторный выходы предпочитают его, а лексический — кандидата 2. Здесь показаны softmax по кандидатам, не сырые оценки и не распределения по словарю.",
+    "<b>Собрать учителя.</b> Складываем логиты с весами \\((1,0.3,1)\\), получаем \\((4.3,1.95,0)\\). Их softmax копируем с <code>detach</code>. Цель на этом обратном проходе — константа, но её источник — текущая модель.",
+    "<b>Ошибка ученика.</b> Для позитива \\(0.331-0.902\\approx-0.570\\): градиентный спуск повышает его логит. Для документа о письме \\(0.547-0.086\\approx0.461\\): логит нужно понизить. Это градиент одной KD-составляющей, до весов общей функции потерь.",
+    "<b>Обновление.</b> Градиент проходит через оценку ученика к его голове и общему кодировщику. Добавляются потери остальных выходов и разметки. Цель этого шага не меняется при дифференцировании; на следующем прямом проходе все оценки и цель будут вычислены заново. Отдельной навсегда замороженной модели нет."
+  ][step];
+  return bgePlayer(box, "Один шаг самодистилляции BGE-M3",
+    ["сравнить выходы", "зафиксировать цель", "ошибка ученика", "обновить параметры"], draw, explain).cleanup;
+}
+
 Object.assign(FIGURES, {
-  "bge-flow": mountBgeFlow
+  "bge-flow": mountBgeFlow,
+  "bge-retromae": mountBgeRetroMae,
+  "bge-distill": mountBgeDistill
 });
