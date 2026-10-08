@@ -1,0 +1,40 @@
+/* agents/tool-calling: только стили иллюстрации tc-stream. */
+.tc-stage { display: grid; gap: 12px; }
+.tc-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; }
+.tc-heading b { color: var(--chapter-ink); font-size: 14px; }
+.tc-heading > span { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
+.tc-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); gap: 12px; align-items: stretch; }
+.tc-panel { border: 1px solid var(--rule); border-radius: 8px; padding: 12px; min-width: 0; background: var(--bg); display: flex; flex-direction: column; }
+.fig .tc-panel h3 { margin: 0 0 10px; font: 600 13px var(--ui); color: var(--ink); }
+.tc-stream { height: 380px; overflow: auto; margin: 0; font: 11.5px/1.65 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+.tc-s { border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.tc-tpl { color: var(--muted); }
+.tc-dev { background: color-mix(in srgb, var(--g3) 14%, var(--bg)); }
+.tc-user { background: color-mix(in srgb, var(--g4) 14%, var(--bg)); }
+.tc-model { background: color-mix(in srgb, var(--g1) 20%, var(--bg)); }
+.tc-tool { background: color-mix(in srgb, var(--g2) 20%, var(--bg)); }
+.tc-tok { border: 1px solid var(--fig-edge); border-radius: 3px; padding: 0 1px; font-weight: 600; }
+.tc-new { box-shadow: 0 0 0 1.5px var(--chapter-ink); }
+.tc-train .tc-s:not(.tc-loss) { opacity: 0.38; }
+.tc-train .tc-loss { box-shadow: 0 0 0 1.5px var(--g1); }
+.tc-api { list-style: none; display: grid; gap: 8px; margin: 0; padding: 0; height: 380px; overflow: auto; align-content: start; }
+.tc-msg { display: grid; grid-template-columns: auto 1fr; gap: 3px 8px; border-left: 3px solid var(--rule); padding: 4px 0 4px 9px; font-size: 12px; line-height: 1.5; }
+.tc-msg b { font-size: 11px; color: var(--muted); }
+.tc-msg .tc-id { justify-self: end; font: 11px var(--mono); color: var(--muted); }
+.tc-msg code { grid-column: 1 / -1; font-size: 11px; overflow-wrap: anywhere; white-space: normal; }
+.tc-msg .tc-meta { grid-column: 1 / -1; color: var(--muted); font-size: 11px; }
+.tc-role-system, .tc-role-tools { border-color: var(--g3); }
+.tc-role-user { border-color: var(--g4); }
+.tc-role-assistant { border-color: var(--g1); }
+.tc-role-tool { border-color: var(--g2); }
+.tc-new-item { background: color-mix(in srgb, var(--chapter) 9%, var(--bg)); }
+.tc-key { display: inline-block; width: 14px; height: 10px; border-radius: 2px; }
+.tc-key.tc-tpl { border: 1px solid var(--fig-edge); background: transparent; }
+.tc-tok-key { border: 1.5px solid var(--fig-edge); background: transparent; }
+.tc-loss-key { background: transparent; box-shadow: 0 0 0 1.5px var(--g1); }
+@media (max-width: 620px) {
+  .tc-grid { grid-template-columns: minmax(0, 1fr); }
+  .tc-panel { padding: 10px; }
+  .tc-stream { height: 320px; }
+  .tc-api { height: 300px; }
+}

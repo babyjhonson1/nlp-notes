@@ -346,6 +346,24 @@
             "termination",
             "step limit"
           ]
+        },
+        {
+          "id": "tool-calling",
+          "title": "Вызов инструментов: что генерирует модель и что проверяет код",
+          "status": "done",
+          "summary": "Продолжение диагностики ACCESS_CHECK_FAILED на уровне токенов: шаблон чата Qwen3-4B-Instruct-2507 вставляет описания функций в промпт, модель генерирует вызов в формате из обучения, парсер сервера превращает текст в tool_calls. Разобраны маска потерь на ходах ассистента и фильтр Toolformer, границы гарантий JSON Schema, ограниченного декодирования и tool_choice, возврат ошибок вызова как наблюдений и адаптер цикла к OpenAI-совместимому серверу vLLM.",
+          "concepts": [
+            "tool calling",
+            "chat template",
+            "tool call parser",
+            "JSON Schema",
+            "loss masking",
+            "Toolformer",
+            "constrained decoding",
+            "tool_choice",
+            "strict mode",
+            "error as observation"
+          ]
         }
       ]
     },
