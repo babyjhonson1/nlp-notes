@@ -2,7 +2,7 @@
    матрица MaxSim, функция потерь, градиент через максимумы) и индекс ColBERTv2 (центроиды, сжатые
    остатки, поиск по инвертированным спискам). Помощники — figures/mdl.js. Все числа условные. */
 
-function mountColbertFlow(box){
+function mountColbertFlow(box, mode = "train", first = 3, count = 3){
   const QUERY = "how much protein should a female eat";
   // показанные строки матрицы: 7 токенов запроса и 3 из 22 позиций [MASK]
   const ROWS = ["how", "much", "protein", "should", "a", "female", "eat", "[MASK]", "[MASK]", "[MASK]"];
@@ -54,9 +54,9 @@ function mountColbertFlow(box){
   ];
   const MODES = {
     train: { tab: "Обучение v1", steps: ["вход", "общий BERT", "проекция и нормировка", "MaxSim", "функция потерь", "обратный проход"] },
-    index: { tab: "Индекс v2", steps: ["векторы и центроиды", "остаток в 2 битах", "поиск по центроидам", "точный MaxSim"] }
+    index: { tab: "Индекс v2", steps: ["векторы и центроиды", "остаток в 2 битах", "поиск по центроидам", "полный MaxSim"] }
   };
-  let mode = "train", doc = "pos";
+  let doc = "pos";
 
   const maxsim = (k) => {
     const S = DOCS[k].sim, arg = S.map((r) => r.indexOf(Math.max(...r))), mx = S.map((r) => Math.max(...r));
@@ -78,9 +78,6 @@ function mountColbertFlow(box){
 
   box.innerHTML = `
     <div class="fig-stage"><svg tabindex="0" role="img" aria-label="Схема ColBERT: векторы токенов, MaxSim, функция потерь и сжатый индекс"></svg></div>
-    <div class="fig-row">
-      <div class="fig-tabs mdl-tabs" role="tablist" aria-label="Режим">${Object.entries(MODES).map(([k, m]) => `<button type="button" role="tab" data-mode="${k}" aria-selected="${k === mode}">${m.tab}</button>`).join("")}</div>
-    </div>
     <div class="fig-row" data-row="train">
       <span class="fig-seg colbert-seg">документ<span class="fig-tabs" role="tablist" aria-label="Документ">
         <button type="button" role="tab" data-doc="pos" aria-selected="true">позитив</button>
@@ -99,7 +96,7 @@ function mountColbertFlow(box){
     ])}</div>`;
   const stage = box.querySelector(".fig-stage"), svg = stage.querySelector("svg"), say = box.querySelector(".fig-say");
   const rows = [...box.querySelectorAll("[data-row]")];
-  const H = 440;
+  const H = 460;
 
   /* ---------- обучение, шаги 0–2: вход, общий BERT, проекция ---------- */
   function drawEncode(step, W){
@@ -199,7 +196,7 @@ function mountColbertFlow(box){
         const x = x0 + (j + 0.5) * c;
         if (grad.has(j)) s += mdlGrad(x, yG, x, yG + 24);
       });
-      s += `<text x="${f1(W / 2)}" y="${f1(yG + 38)}" class="mdl-cap sm" text-anchor="middle">градиент получают векторы ${grad.size} из 12 токенов документа</text>`;
+      s += `<text x="${f1(W / 2)}" y="${f1(yG + 38)}" class="mdl-cap sm" text-anchor="middle">прямой градиент MaxSim: ${grad.size} из 12 выходных векторов</text>`;
     }
     return s;
   }
@@ -244,7 +241,7 @@ function mountColbertFlow(box){
       const xa = W < 480 ? W - 96 : W / 2 + 120, xe = W < 480 ? W - 40 : W / 2 + 190;
       s += `<text x="${f1(xl)}" y="${f1(yt)}" class="mdl-cap sm">кандидаты</text>`;
       s += `<text x="${f1(xa)}" y="${f1(yt)}" class="mdl-cap sm" text-anchor="middle">по кластерам</text>`;
-      s += `<g${mdlFade(step >= 3)}><text x="${f1(xe)}" y="${f1(yt)}" class="mdl-cap sm${step === 3 ? " on" : ""}" text-anchor="middle">точно</text></g>`;
+      s += `<g${mdlFade(step >= 3)}><text x="${f1(xe)}" y="${f1(yt)}" class="mdl-cap sm${step === 3 ? " on" : ""}" text-anchor="middle">полностью</text></g>`;
       CAND.forEach((cd, r) => {
         const y = yt + lh * (r + 1);
         s += `<text x="${f1(xl)}" y="${f1(y)}" class="mdl-lbl${cd.role ? " " + cd.role : ""}">${mdlEsc(mdlWrap(cd.t, xa - xl - 40, 11, 1)[0])}</text>`;
@@ -270,41 +267,37 @@ function mountColbertFlow(box){
       const fem = ms.mx[5], femTok = C[ms.arg[5]];
       const got = [...new Set(ms.arg)].map((j) => C[j]), none = C.filter((_, j) => !ms.arg.includes(j));
       return [
-        "<b>Вход.</b> Запрос — <code>[CLS]</code>, маркер <code>[Q]</code> (в словаре это <code>[unused0]</code>), 7 токенов WordPiece, <code>[SEP]</code> и 22 токена <code>[MASK]</code>: всего \\(N_q=32\\) позиции. Документ получает маркер <code>[D]</code> (<code>[unused1]</code>) и не дополняется; точка в конце — знак пунктуации. Тексты и все числа на схеме условные.",
+        "<b>Вход.</b> Запрос — <code>[CLS]</code>, маркер <code>[Q]</code> (в словаре это <code>[unused0]</code>), 7 токенов WordPiece, <code>[SEP]</code> и 22 токена <code>[MASK]</code>: всего \\(N_q=32\\) позиции. Документ получает маркер <code>[D]</code> (<code>[unused1]</code>) и не дополняется; точка в конце — знак пунктуации. Запрос — из MS MARCO, документы написаны для примера. Числа условные.",
         "<b>Общий BERT.</b> Запрос и документ проходят через одну и ту же сеть, но по отдельности: внимание не связывает их токены, поэтому векторы документа можно посчитать заранее. Настоящие токены запроса не видят позиций <code>[MASK]</code>, а сами эти позиции видят запрос, так что их выходы — функции запроса.",
         "<b>Проекция и нормировка.</b> Выход каждого токена проходит линейный слой \\(W\\in\\mathbb{R}^{128\\times768}\\) без активации и нормируется до единичной длины. Пулинга нет: запрос остаётся матрицей из 32 векторов, документ — из 12, потому что вектор точки отбрасывается. Он не попадёт и в индекс.",
-        `<b>MaxSim.</b> Клетка — косинус вектора запроса и вектора документа; показаны 10 из 32 строк. В каждой строке берётся максимум (обведён), и оценка \\(S(q,d)\\) — сумма максимумов: здесь \\(${mdlNum(ms.sum, 2)}\\). ` +
-          (pos ? `Токен female находит в позитиве women (\\(${mdlNum(fem, 2)}\\)), а позиции <code>[MASK]</code> — day, grams и women: это и есть выученное расширение запроса.`
+        `<b>MaxSim.</b> Клетка — косинус вектора запроса и вектора документа; показаны 10 из 32 строк. В каждой строке берётся максимум (обведён), и сумма максимумов по этим 10 строкам — учебная оценка: здесь \\(${mdlNum(ms.sum, 2)}\\). ` +
+          (pos ? `Токен female находит в позитиве women (\\(${mdlNum(fem, 2)}\\)), а позиции <code>[MASK]</code> — day, grams и women: так может выглядеть обученное дополнение запроса; совпадения здесь придуманы для примера.`
                : `В негативе лучший токен для female — men, всего \\(${mdlNum(fem, 2)}\\), и последняя позиция <code>[MASK]</code> тоже совпадает слабее. Остальные строки почти такие же, как у позитива.`),
         `<b>Функция потерь.</b> Softmax по двум оценкам без температуры: \\(p^{+}=\\sigma(S^{+}-S^{-})=\\sigma(${mdlNum(l.d, 2)})=${mdlNum(l.p, 2)}\\), \\(\\mathcal{L}=-\\log p^{+}=${mdlNum(l.L, 2)}\\). Разница сумм складывается из разниц по строкам, и сильнее всего её дают female и последняя позиция <code>[MASK]</code>. В настоящей модели слагаемых 32, и разница в несколько единиц уже даёт уверенную вероятность.`,
-        `<b>Обратный проход.</b> Через максимум градиент проходит только к выбранной клетке строки: в ${pos ? "позитиве" : "негативе"} его получают векторы ${got.join(", ")}, а ${none.join(", ")} ни разу не стали максимумом и от этой пары ничего не получают. Векторы запроса тянутся к выбранным токенам позитива и отталкиваются от выбранных токенов негатива с одним весом \\(1-p^{+}=${mdlNum(1 - l.p, 2)}\\); дальше градиент идёт в общий BERT и проекцию.`
+        `<b>Обратный проход.</b> Через максимум градиент проходит только к выбранной клетке строки: в ${pos ? "позитиве" : "негативе"} его получают векторы ${got.join(", ")}, а выходные векторы ${none.join(", ")} не получают прямого градиента от MaxSim. Это не относится ко всем слоям BERT: через self-attention сигнал может прийти и к входным представлениям этих токенов. Векторы запроса тянутся к выбранным токенам позитива и отталкиваются от выбранных токенов негатива с одним весом \\(1-p^{+}=${mdlNum(1 - l.p, 2)}\\); дальше градиент идёт в общий BERT и проекцию.`
       ][step];
     }
     return [
       "<b>Векторы и центроиды.</b> Точки — векторы токенов корпуса, крестики — центроиды k-means. Векторы одного токена в близких контекстах ложатся рядом, поэтому центроид хорошо описывает свой кластер. На плоскости это условная картинка: векторы 128-мерные, а в MS MARCO около \\(6\\cdot10^{8}\\) векторов и \\(2^{18}\\) центроидов.",
       "<b>Остаток в 2 битах.</b> Вектор \\(v\\) хранится как номер ближайшего центроида \\(C_t\\) и остаток \\(r=v-C_t\\) (стрелка), каждая координата которого заменена одним из четырёх уровней. Узлы сетки — все возможные \\(\\tilde v=C_t+\\tilde r\\); кружок — восстановленный вектор. 4 байта на номер и 32 байта на остаток вместо 256 байт 16-битного вектора.",
-      `<b>Поиск по центроидам.</b> Вектор запроса female находит \\(n_{\\text{probe}}=2\\) ближайших центроида — women и men. Их инвертированные списки дают векторы токенов и пассажи, которым они принадлежат. Векторы распаковываются, сравниваются с запросом, и для каждого пассажа берётся максимум. Так поступает каждый из 32 векторов запроса, а сумма максимумов — нижняя оценка MaxSim по просмотренным кластерам. Оценки условные.`,
-      "<b>Точный MaxSim.</b> Для лучших по нижней оценке кандидатов загружаются все векторы, и MaxSim считается полностью. Точная оценка не меньше приближённой: в ней участвуют и токены из непросмотренных кластеров. По умолчанию кандидатов \\(n_{\\text{probe}}\\cdot2^{12}\\); PLAID отсеивает часть из них заранее, сравнивая запрос с центроидами без распаковки остатков."
+      `<b>Поиск по центроидам.</b> Вектор запроса female находит \\(n_{\\text{probe}}=2\\) ближайших центроида — women и men. Их инвертированные списки дают векторы токенов и пассажи, которым они принадлежат. Векторы распаковываются, сравниваются с запросом, и для каждого пассажа берётся максимум. Так поступает каждый из 32 векторов запроса, а по совпадениям из просмотренных кластеров строится предварительная оценка документа. Оценки условные.`,
+      "<b>Полный MaxSim.</b> Для лучших кандидатов загружаются все сохранённые векторы, включая непросмотренные кластеры. Это полный расчёт по распакованным приближённым векторам, а не возврат к исходным несжатым представлениям. PLAID откладывает распаковку: сначала отсеивает слабые документы по центроидам."
     ][step];
   }
 
-  const player = vlPlayer(box, { count: () => MODES[mode].steps.length, draw, label: (i, n) => `шаг ${i + 1} из ${n}: ${MODES[mode].steps[i]}`, interval: 2600 });
-  box.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
-    mode = b.dataset.mode;
-    box.querySelectorAll("[data-mode]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
-    player.stop();
-    player.go(Math.min(player.i, MODES[mode].steps.length - 1));
-  }));
+  const player = vlPlayer(box, { count: () => count, draw: i => draw(i + first), label: (i, n) => `шаг ${i + 1} из ${n}: ${MODES[mode].steps[i + first]}`, interval: 2600 });
   box.querySelectorAll("[data-doc]").forEach((b) => b.addEventListener("click", () => {
     doc = b.dataset.doc;
     box.querySelectorAll("[data-doc]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
     player.paint();
   }));
   player.paint();
-  const unobserve = cbResize(stage, () => draw(player.i));
+  const unobserve = cbResize(stage, () => draw(player.i + first));
   return () => { player.stop(); unobserve(); };
 }
 
 Object.assign(FIGURES, {
-  "colbert-flow": mountColbertFlow
+  "colbert-flow": mountColbertFlow,
+  "colbert-encode": box => mountColbertFlow(box, "train", 0, 3),
+  "colbert-index": box => mountColbertFlow(box, "index", 0, 4)
 });
