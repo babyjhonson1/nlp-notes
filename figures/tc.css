@@ -1,4 +1,4 @@
-/* agents/tool-calling: только стили иллюстрации tc-stream. */
+/* agents/tool-calling: стили иллюстраций tc-stream и tc-toolformer. */
 .tc-stage { display: grid; gap: 12px; }
 .tc-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; }
 .tc-heading b { color: var(--chapter-ink); font-size: 14px; }
@@ -37,4 +37,50 @@
   .tc-panel { padding: 10px; }
   .tc-stream { height: 320px; }
   .tc-api { height: 300px; }
+}
+
+/* tc-toolformer */
+.tc-tf-stage { display: grid; gap: 10px; }
+.tc-tf-body { min-height: 400px; display: grid; gap: 10px; align-content: start; font-size: 12.5px; line-height: 1.5; }
+.tc-tf-prompt { margin: 0; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px; font: 11.5px/1.6 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.tc-tf-muted { color: var(--muted); }
+.tc-tf-call { background: color-mix(in srgb, var(--g1) 20%, var(--bg)); border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.tc-tf-res { background: color-mix(in srgb, var(--g2) 20%, var(--bg)); border-radius: 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.tc-tf-cap { margin: 0; color: var(--muted); font-size: 12px; }
+.tc-tf-bars, .tc-tf-cands, .tc-tf-prefixes, .tc-tf-kept, .tc-tf-gen { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.tc-tf-bar { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr) 3.4em; gap: 10px; align-items: center; }
+.tc-tf-bar code { font-size: 11.5px; overflow-wrap: anywhere; color: var(--muted); }
+.tc-tf-track { position: relative; height: 12px; border-radius: 3px; background: var(--fig-plate); }
+.tc-tf-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--fig-edge); }
+.tc-tf-thr { position: absolute; top: -3px; bottom: -3px; border-left: 1.5px dashed var(--fig-bad); }
+.tc-tf-val { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+.tc-tf-pass code, .tc-tf-pass .tc-tf-val { color: var(--ink); }
+.tc-tf-pass .tc-tf-fill { background: var(--g1); }
+.tc-tf-sel code { font-weight: 600; color: var(--chapter-ink); }
+.tc-tf-cand, .tc-tf-gen li, .tc-tf-prefixes li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: baseline; }
+.tc-tf-cand > span, .tc-tf-prefixes li > span, .tc-tf-gen li > span { font: 11.5px/1.6 var(--mono); overflow-wrap: anywhere; }
+.tc-tf-cand b { color: var(--chapter-ink); }
+.tc-tf-prefixes li b, .tc-tf-gen li b { font-size: 11px; color: var(--muted); min-width: 9.5em; }
+.tc-tf-cut { color: var(--fig-bad); font-weight: 600; }
+.tc-tf-grid { overflow-x: auto; }
+.tc-tf-grid table { border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.tc-tf-grid th, .tc-tf-grid td { padding: 4px 8px; border: 1px solid var(--rule); text-align: right; white-space: nowrap; }
+.tc-tf-grid th { font-weight: 500; color: var(--muted); }
+.tc-tf-grid tbody th { text-align: left; }
+.tc-tf-w td { color: var(--muted); }
+.tc-tf-grid .tc-tf-sum { font-weight: 600; color: var(--ink); background: var(--bg); }
+.tc-tf-verdict { margin: 0; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.tc-tf-chip { display: inline-block; margin-left: 4px; padding: 0 7px; border-radius: 10px; font-size: 11.5px; font-weight: 600; }
+.tc-tf-ok { color: var(--bg); background: var(--g1); }
+.tc-tf-no { color: var(--bg); background: var(--fig-bad); }
+.tc-tf-kept li { font-size: 12.5px; }
+.tc-tf-pause span { color: var(--muted); font-family: var(--ui); }
+.tc-tf-off { opacity: 0.45; }
+.tc-tf-key-call { background: color-mix(in srgb, var(--g1) 35%, var(--bg)); }
+.tc-tf-key-res { background: color-mix(in srgb, var(--g2) 35%, var(--bg)); }
+.tc-tf-key-pass { background: var(--g1); }
+@media (max-width: 620px) {
+  .tc-tf-body { min-height: 560px; }
+  .tc-tf-bar { grid-template-columns: minmax(0, 8.5em) minmax(0, 1fr) 3.2em; gap: 6px; }
+  .tc-tf-prefixes li, .tc-tf-gen li { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 }

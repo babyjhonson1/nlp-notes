@@ -158,6 +158,195 @@ function mountTcStream(box){
   };
 }
 
+/* ---------- Toolformer: шесть шагов разметки для одной фразы ----------
+   Вероятности, кандидаты и потери условные (не от модели); взвешенные потери
+   подобраны так, чтобы быть точными до сотых. */
+
+const TF_TOKENS = ["Ошибка", "ACCESS_CHECK_FAILED", "означает", ",", "что", "проверка", "доступа", "не", "завершилась", "."];
+const TF_P = [0.001, 0.02, 0.07, 0.003, 0.01, 0.21, 0.004, 0.006, 0.008, 0.002];
+const TF_TAU_S = 0.05;
+const TF_P_MAX = 0.25;
+const TF_POS = 5;
+const TF_W = [5, 4, 3, 2, 1].map(x => x / 15);
+const TF_NONE = [3.6, 0.9, 1.8, 1.6, 0.4];
+const TF_INSTR = "ACCESS_CHECK_FAILED: проверка доступа не завершилась. Проверьте статус auth…";
+const TF_CANDS = [
+  { key: "A", query: "ACCESS_CHECK_FAILED", result: TF_INSTR,
+    noRes: [3.4, 0.9, 1.7, 1.5, 0.4], withRes: [0.6, 0.2, 0.3, 0.3, 0.4],
+    why: "Запрос по коду ошибки сам продолжение почти не подсказывает, а результат делает его почти предсказуемым. Сильнее всего падает потеря первого слова, у которого и вес наибольший." },
+  { key: "B", query: "вход в портал", result: "Вход в портал: используйте корпоративную учётную запись…",
+    noRes: [3.3, 0.9, 1.8, 1.6, 0.4], withRes: [3.1, 0.8, 1.7, 1.5, 0.5],
+    why: "Инструкция о входе не говорит, что дальше в тексте, и потеря почти не меняется." },
+  { key: "C", query: "проверка доступа не завершилась", result: TF_INSTR,
+    noRes: [0.7, 0.2, 0.3, 0.4, 0.3], withRes: [0.5, 0.2, 0.3, 0.3, 0.3],
+    why: "Результат верный, и потеря с ним даже ниже, чем у A. Но продолжение уже написано в запросе: модель, составившая такой запрос, знала текст и без инструмента. Поэтому низка и потеря без результата. Без этого варианта в минимуме разность была бы \\(2{,}04-0{,}34=1{,}70\\)." }
+];
+const TF_TEXT = TF_TOKENS.join(" ").replace(" ,", ",").replace(" .", ".");
+const TF_HEAD = "Ошибка ACCESS_CHECK_FAILED означает, что";
+const TF_TAIL = "проверка доступа не завершилась.";
+
+const tfLoss = values => Math.round(values.reduce((sum, x, t) => sum + TF_W[t] * x, 0) * 100) / 100;
+const tfNum = (x, d = 2) => fmtN(x, d);
+const tfTex = (x, d = 2) => x.toFixed(d).replace(".", "{,}");
+function tfScore(cand){
+  const none = tfLoss(TF_NONE), noRes = tfLoss(cand.noRes), plus = tfLoss(cand.withRes);
+  const minus = Math.min(none, noRes);
+  return { none, noRes, plus, minus, diff: Math.round((minus - plus) * 100) / 100 };
+}
+const tfPasses = (cand, tau) => tfScore(cand).diff >= tau - 1e-9;
+const tfCall = (cand, result) => `[search_instruction("${cand.query}") -&gt;${result === undefined ? "" : " " + escapeHtml(result)}]`;
+
+const TF_STEPS = [
+  { title: "1. Где может начаться вызов" },
+  { title: "2. Модель предлагает вызовы" },
+  { title: "3. Код исполняет кандидатов" },
+  { title: "4. Фильтр по потере продолжения" },
+  { title: "5. Текст для дообучения" },
+  { title: "6. Генерация после дообучения" }
+];
+
+function tfStage(step, cand, tau){
+  const prompt = `<div class="tc-tf-prompt"><span class="tc-tf-muted">Добавь в текст вызовы search_instruction("запрос"), если результат помогает его дописать.
+Вход: … Выход: … [search_instruction("…") -&gt; …] …</span>
+Вход: ${escapeHtml(TF_TEXT)}
+Выход: ${step === 0 ? `<span class="tc-tf-muted">${escapeHtml(TF_TEXT)}</span>` : `${escapeHtml(TF_HEAD)} <span class="tc-tf-call">[</span>`}</div>`;
+  if (step === 0){
+    const rows = TF_TOKENS.map((token, i) => {
+      const p = TF_P[i], pass = p >= TF_TAU_S;
+      const cls = ["tc-tf-bar"];
+      if (pass) cls.push("tc-tf-pass");
+      if (i === TF_POS) cls.push("tc-tf-sel");
+      return `<li class="${cls.join(" ")}"><code>${escapeHtml(token)}</code><span class="tc-tf-track"><span class="tc-tf-fill" style="width:${(Math.min(p, TF_P_MAX) / TF_P_MAX * 100).toFixed(1)}%"></span><span class="tc-tf-thr" style="left:${(TF_TAU_S / TF_P_MAX * 100).toFixed(1)}%"></span></span><span class="tc-tf-val">${tfNum(p, p < 0.01 ? 3 : 2)}</span></li>`;
+    }).join("");
+    return `${prompt}<p class="tc-tf-cap">Вероятность открыть «[» перед каждым токеном выхода; штрих — порог 0,05</p><ol class="tc-tf-bars">${rows}</ol>`;
+  }
+  if (step === 1 || step === 2){
+    const rows = TF_CANDS.map(c => `<li class="tc-tf-cand"><b>${c.key}</b><span><span class="tc-tf-call">${step === 1 ? `search_instruction("${escapeHtml(c.query)}")]` : tfCall(c, c.result)}</span></span></li>`).join("");
+    return `${prompt}<p class="tc-tf-cap">${step === 1 ? "Сэмплированные продолжения после «[» до закрывающей скобки" : "Каждый вызов исполнен; после стрелки — результат инструмента"}</p><ol class="tc-tf-cands">${rows}</ol>`;
+  }
+  if (step === 3){
+    const sc = tfScore(cand);
+    const rowsDef = [
+      ["без вызова", "", TF_NONE, sc.none],
+      ["вызов без результата", `<span class="tc-tf-call">${tfCall(cand)}</span> `, cand.noRes, sc.noRes],
+      ["вызов с результатом", `<span class="tc-tf-call">${tfCall(cand, cand.result)}</span> `, cand.withRes, sc.plus]
+    ];
+    const prefixes = rowsDef.map(([label, pre]) => `<li><b>${label}</b><span>${pre}${escapeHtml(TF_HEAD)} <span class="tc-tf-cut">│</span> ${escapeHtml(TF_TAIL)}</span></li>`).join("");
+    const head = TF_TOKENS.slice(TF_POS).map(t => `<th>${escapeHtml(t)}</th>`).join("");
+    const heat = x => `style="background:color-mix(in srgb, var(--fig-bad) ${Math.round(Math.min(x, 4) / 4 * 42)}%, var(--bg))"`;
+    const body = rowsDef.map(([label, , vals, total]) => `<tr><th>${label}</th>${vals.map(v => `<td ${heat(v)}>${tfNum(v, 1)}</td>`).join("")}<td class="tc-tf-sum">${tfNum(total)}</td></tr>`).join("");
+    const pass = tfPasses(cand, tau);
+    return `<ol class="tc-tf-prefixes">${prefixes}</ol>
+      <div class="tc-tf-grid"><table><thead><tr><th>потеря токена</th>${head}<th>взвеш.</th></tr></thead><tbody>
+        <tr class="tc-tf-w"><th>вес</th>${TF_W.map(w => `<td>${tfNum(w)}</td>`).join("")}<td></td></tr>${body}</tbody></table></div>
+      <p class="tc-tf-verdict">Лучшая без результата: ${tfNum(sc.minus)} · с результатом: ${tfNum(sc.plus)} · разность: ${tfNum(sc.diff)} · порог: ${tfNum(tau)} <span class="tc-tf-chip ${pass ? "tc-tf-ok" : "tc-tf-no"}">${pass ? "остаётся" : "отбрасывается"}</span></p>`;
+  }
+  if (step === 4){
+    const kept = TF_CANDS.filter(c => tfPasses(c, tau));
+    const line = kept.length
+      ? `${escapeHtml(TF_HEAD)} <span class="tc-tf-call">[search_instruction("${kept[0].query}") -&gt;</span> <span class="tc-tf-res">${escapeHtml(kept[0].result)}</span><span class="tc-tf-call">]</span> ${escapeHtml(TF_TAIL)}`
+      : escapeHtml(TF_TEXT);
+    const list = TF_CANDS.map(c => `<li><b>${c.key}</b> разность ${tfNum(tfScore(c).diff)} <span class="tc-tf-chip ${tfPasses(c, tau) ? "tc-tf-ok" : "tc-tf-no"}">${tfPasses(c, tau) ? "в C*" : "отброшен"}</span></li>`).join("");
+    return `<p class="tc-tf-cap">Фраза в корпусе C* при пороге ${tfNum(tau)}</p><div class="tc-tf-prompt">${line}</div>
+      <ul class="tc-tf-kept">${list}<li><b>«означает»</b> вторая позиция: пусть её кандидаты фильтр не прошли</li></ul>
+      <p class="tc-tf-cap">Дообучение — обычная задача языкового моделирования на всём тексте C*, включая вставленные вызовы.</p>`;
+  }
+  const a = TF_CANDS[0];
+  return `<p class="tc-tf-cap">Генерация после дообучения: кто пишет каждый фрагмент</p>
+    <ol class="tc-tf-gen">
+      <li><b>модель</b><span>${escapeHtml(TF_HEAD)} <span class="tc-tf-call">[search_instruction("${a.query}") -&gt;</span></span></li>
+      <li class="tc-tf-pause"><b>пауза</b><span>модель написала «-&gt;»: декодирование остановлено, код исполняет вызов</span></li>
+      <li><b>код</b><span><span class="tc-tf-res">${escapeHtml(a.result)}</span><span class="tc-tf-call">]</span></span></li>
+      <li><b>модель</b><span>${escapeHtml(TF_TAIL)}</span></li>
+    </ol>`;
+}
+
+function tfSay(step, cand, tau){
+  if (step === 0) return "Модель переписывает текст после промпта с примерами. Перед каждым токеном \\(x_i\\) берётся вероятность открыть скобку \\(p_i=p_M(\\text{«[»}\\mid P(x),\\,x_{1:i-1})\\); все \\(p_i\\) даёт один прямой проход. Порог \\(\\tau_s=0{,}05\\) прошли две позиции: перед «означает» и перед «проверка». Дальше разбираем вторую.";
+  if (step === 1) return "В выбранной позиции модель продолжает префикс с открытой скобкой до закрывающей и сэмплирует несколько кандидатов, в статье до пяти. A ищет по коду ошибки, B — по общей теме, C — по словам, которые идут в тексте дальше.";
+  if (step === 2) return "Код исполняет каждый кандидат настоящим инструментом. A и C вернули инструкцию access-17, B — инструкцию о входе в портал. Полезен ли вызов, пока неизвестно: это решает фильтр.";
+  if (step === 3){
+    const sc = tfScore(cand), pass = tfPasses(cand, tau);
+    return `<b>Кандидат ${cand.key}.</b> Лучшая потеря без результата \\(L_i^{-}=\\min(${tfTex(sc.none)};\\ ${tfTex(sc.noRes)})=${tfTex(sc.minus)}\\), с результатом \\(L_i^{+}=${tfTex(sc.plus)}\\), разность \\(${tfTex(sc.diff)}\\) ${pass ? "не меньше" : "меньше"} порога \\(\\tau_f=${tfTex(tau)}\\): вызов ${pass ? "остаётся" : "отбрасывается"}. ${cand.why}`;
+  }
+  if (step === 4){
+    return TF_CANDS.some(c => tfPasses(c, tau))
+      ? "Прошедший вызов вставлен в позицию перед «проверка» вместе с результатом. Кроме вставок корпус \\(C^*\\) совпадает с исходным, поэтому модель продолжает учиться обычному тексту и вдобавок учится открывать скобку там, где вызов ей помог."
+      : `При \\(\\tau_f=${tfTex(tau)}\\) не прошёл ни один кандидат, и фраза попадёт в \\(C^*\\) без вызова. Строже порог — меньше примеров, но каждый надёжнее.`;
+  }
+  return "Генерация обычная, пока модель не напишет «-&gt;». Тогда декодирование приостанавливается, код исполняет вызов и вставляет результат со скобкой, а модель продолжает уже с результатом в контексте. Это разрыв между предложением вызова и исполнением из агентного цикла, только внутри одного текста.";
+}
+
+function mountTcToolformer(box){
+  let step = 0;
+  let cand = TF_CANDS[0];
+  let tau = 1;
+  box.innerHTML = `
+    <div class="fig-stage tc-tf-stage">
+      <div class="tc-heading"><b data-title></b><span>условные числа</span></div>
+      <div class="tc-tf-body" data-body></div>
+    </div>
+    <div class="fig-row">
+      <button type="button" class="fig-btn icon" data-prev aria-label="Предыдущий шаг">${ICON.prev}</button>
+      <button type="button" class="fig-btn" data-next>Далее ${ICON.next}</button>
+      <button type="button" class="fig-btn" data-reset>В начало</button>
+      <span class="fig-status" data-position></span>
+    </div>
+    <div class="fig-row tc-tf-controls">
+      <span class="fig-seg">Кандидат <span class="fig-tabs" role="group" aria-label="Кандидат">${TF_CANDS.map(c => `<button type="button" data-cand="${c.key}">${c.key}</button>`).join("")}</span></span>
+      <label class="fig-range">порог \\(\\tau_f\\) <input type="range" min="0.25" max="2" step="0.05" value="1" data-tau><output data-tau-out>1,00</output></label>
+    </div>
+    <p class="fig-say" aria-live="polite"></p>
+    <div class="fig-legend">${legend([
+      ['<i class="tc-key tc-tf-key-call"></i>', "вызов, предложенный моделью"],
+      ['<i class="tc-key tc-tf-key-res"></i>', "результат инструмента"],
+      ['<i class="tc-key tc-tf-key-pass"></i>', "позиция прошла порог"]
+    ])}</div>`;
+
+  const get = selector => box.querySelector(selector);
+  const prev = get("[data-prev]");
+  const next = get("[data-next]");
+  const reset = get("[data-reset]");
+  const slider = get("[data-tau]");
+  const candButtons = [...box.querySelectorAll("[data-cand]")];
+
+  const render = () => {
+    get("[data-title]").textContent = TF_STEPS[step].title;
+    get("[data-body]").innerHTML = tfStage(step, cand, tau);
+    get(".fig-say").innerHTML = tfSay(step, cand, tau);
+    get("[data-position]").textContent = `Шаг ${step + 1} из ${TF_STEPS.length}`;
+    get("[data-tau-out]").textContent = tfNum(tau);
+    for (const b of candButtons){
+      b.setAttribute("aria-selected", String(b.dataset.cand === cand.key));
+      b.disabled = step !== 3;
+    }
+    slider.disabled = step < 3 || step > 4;
+    get(".tc-tf-controls").classList.toggle("tc-tf-off", step < 3 || step > 4);
+    prev.disabled = step === 0;
+    next.disabled = step === TF_STEPS.length - 1;
+    reset.disabled = step === 0;
+  };
+  const onPrev = () => { step--; render(); };
+  const onNext = () => { step++; render(); };
+  const onReset = () => { step = 0; render(); };
+  const onCand = event => { cand = TF_CANDS.find(c => c.key === event.currentTarget.dataset.cand); render(); };
+  const onTau = () => { tau = Number(slider.value); render(); };
+  prev.addEventListener("click", onPrev);
+  next.addEventListener("click", onNext);
+  reset.addEventListener("click", onReset);
+  for (const b of candButtons) b.addEventListener("click", onCand);
+  slider.addEventListener("input", onTau);
+  render();
+  return () => {
+    prev.removeEventListener("click", onPrev);
+    next.removeEventListener("click", onNext);
+    reset.removeEventListener("click", onReset);
+    for (const b of candButtons) b.removeEventListener("click", onCand);
+    slider.removeEventListener("input", onTau);
+  };
+}
+
 Object.assign(FIGURES, {
-  "tc-stream": mountTcStream
+  "tc-stream": mountTcStream,
+  "tc-toolformer": mountTcToolformer
 });
