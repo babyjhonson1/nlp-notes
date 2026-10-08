@@ -2,7 +2,7 @@
    Помощники — figures/mdl.js (mdlTokChips, mdlCross и др.). Токены примеров получены токенизатором T5;
    вероятности и тексты ответов условные. */
 
-function mountT5Flow(box){
+function mountT5Flow(box, mode = "pre", first = 2, count = 4){
   // «The Irish Sea separates Great Britain from Ireland.»; скрываются Irish Sea и from
   const ORIG = ["The", "Irish", "Sea", "separate", "s", "Great", "Britain", "from", "Ireland", ".", "</s>"];
   const HIDE = [1, 2, 7];
@@ -12,7 +12,7 @@ function mountT5Flow(box){
   const PROB = [0.97, 0.41, 0.88, 0.93, 0.62, 0.95, 0.99];   // условные вероятности правильных токенов цели
   const TASKS = {
     tr: { tab: "перевод", inp: "translate English to German: That is good.", out: "Das ist gut." },
-    nli: { tab: "NLI", inp: "mnli premise: The sea is calm today. hypothesis: There are no waves.", out: "entailment" },
+    nli: { tab: "NLI", inp: "mnli premise: The Irish Sea separates Great Britain from Ireland. hypothesis: A sea separates the two islands.", out: "entailment" },
     sts: { tab: "STS-B", inp: "stsb sentence1: The sea is calm. sentence2: The water is still.", out: "4.2" },
     sum: { tab: "суммаризация", inp: "summarize: The Irish Sea separates Great Britain from Ireland and links to the Atlantic in the north and south.", out: "The Irish Sea lies between Britain and Ireland." }
   };
@@ -20,7 +20,7 @@ function mountT5Flow(box){
     pre: { tab: "Предобучение", steps: ["текст", "вход и цель", "кодировщик", "декодер", "функция потерь", "обратный проход"] },
     t2t: { tab: "Текст в текст", steps: ["вход с префиксом", "кодировщик", "декодер пишет ответ", "ответ — строка"] }
   };
-  let mode = "pre", task = "tr";
+  let task = "tr";
 
   const kind = (t) => /^<\d>$/.test(t) ? "sent" : (t === "</s>" || t === "<pad>") ? "sp" : "tok";
   const chips = (arr, extra = () => "") => arr.map((t, i) => ({ t, k: extra(i) || kind(t) }));
@@ -28,9 +28,6 @@ function mountT5Flow(box){
 
   box.innerHTML = `
     <div class="fig-stage"><svg tabindex="0" role="img" aria-label="Схема T5: кодировщик-декодер, восстановление спанов и формат текст в текст"></svg></div>
-    <div class="fig-row">
-      <div class="fig-tabs mdl-tabs" role="tablist" aria-label="Режим">${Object.entries(MODES).map(([k, m]) => `<button type="button" role="tab" data-mode="${k}" aria-selected="${k === mode}">${m.tab}</button>`).join("")}</div>
-    </div>
     <div class="fig-row" data-row="t2t" hidden>
       <span class="fig-seg t5-seg">задача<span class="fig-tabs mdl-tabs" role="tablist" aria-label="Задача">
         ${Object.entries(TASKS).map(([k, t]) => `<button type="button" role="tab" data-task="${k}" aria-selected="${k === task}">${t.tab}</button>`).join("")}
@@ -110,7 +107,7 @@ function mountT5Flow(box){
       const ph = chipsH(TGT, g.colW), yP = g.twT - 22 - ph, cp = mdlTokChips(g.xd, yP, chips(TGT), g.colW);
       s += mdlFwd(g.xd, g.twT - 2, g.xd, yP + ph + 3, step === 3);
       s += cp.svg;
-      s += `<text x="${f1(g.xd)}" y="${f1(yP - 24)}" class="mdl-cap sm${step === 3 ? " on" : ""}" text-anchor="middle">предсказание следующего токена</text>`;
+      s += `<text x="${f1(g.xd)}" y="${f1(yP - 24)}" class="mdl-cap sm${step === 3 ? " on" : ""}" text-anchor="middle">правильные токены цели</text>`;
       if (step >= 4){
         if (ph < 20) cp.cs.forEach(([x, y], i) => { s += `<text x="${f1(x)}" y="${f1(y - 7)}" class="t5-p" text-anchor="middle">${mdlNum(PROB[i], 2).replace(/^0/, "")}</text>`; });
         else s += `<text x="${f1(g.xd)}" y="${f1(yP - 7)}" class="t5-p" text-anchor="middle">p: ${PROB.map((p) => mdlNum(p, 2).replace(/^0/, "")).join("  ")}</text>`;
@@ -172,7 +169,7 @@ function mountT5Flow(box){
         "<b>Вход и цель.</b> Каждый скрытый отрезок во входе заменён одним сентинелом — на схеме <code>&lt;0&gt;</code>, <code>&lt;1&gt;</code>, в словаре <code>&lt;extra_id_0&gt;</code>, <code>&lt;extra_id_1&gt;</code>. Цель — только скрытые токены, разделённые теми же сентинелами, и завершающий <code>&lt;2&gt;</code>. Цель в 7 токенов вместо 11: декодеру не нужно переписывать видимый текст.",
         "<b>Кодировщик.</b> Двунаправленное внимание по входу с сентинелами: каждый токен видит весь вход. Позиции учитываются только через относительное смещение, добавляемое к логитам внимания. На выходе — по вектору на токен входа; цвета условные.",
         "<b>Декодер.</b> На вход подаётся цель, сдвинутая на один токен вправо, с <code>&lt;pad&gt;</code> в начале (teacher forcing). Каузальное внимание видит только предыдущие токены цели, а cross-attention в каждом блоке смотрит на выходы кодировщика. В каждой позиции декодер предсказывает следующий токен цели.",
-        `<b>Функция потерь.</b> Перекрёстная энтропия по всем токенам цели, включая сентинелы и <code>&lt;/s&gt;</code>: \\(\\mathcal{L}=-\\frac{1}{|y|}\\sum_t\\log p(y_t\\mid y_{&lt;t},\\tilde x)=${mdlNum(lossVal(), 2)}\\) при условных вероятностях на схеме. Труднее всего «Irish» (\\(0.41\\)): чтобы его угадать, нужно связать «Sea» и «Ireland» по обе стороны пропуска.`,
+        `<b>Функция потерь.</b> Перекрёстная энтропия по всем токенам цели, включая сентинелы и <code>&lt;/s&gt;</code>: \\(\\mathcal{L}=-\\frac{1}{|y|}\\sum_t\\log p(y_t\\mid y_{&lt;t},\\tilde x)=${mdlNum(lossVal(), 2)}\\) при условных вероятностях на схеме. Самая низкая условная вероятность у «Irish» (\\(0.41\\)). При его предсказании «Sea» ещё недоступно; контекст дают видимые «Great Britain» и «Ireland».`,
         "<b>Обратный проход.</b> Градиент идёт в декодер, через cross-attention — в кодировщик, а в T5 1.0 ещё и в общую матрицу эмбеддингов входа и выхода. Та же функция потерь и тот же проход используются при дообучении — меняются только пары «вход — цель»."
       ][step];
     }
@@ -180,7 +177,7 @@ function mountT5Flow(box){
     const note = {
       tr: "Перевод — естественная задача для кодировщика-декодера: ответ генерируется токен за токеном. Пример префикса и перевода — из статьи T5.",
       nli: "Класс — это слово. Модель генерирует «entailment», «neutral» или «contradiction»; любой другой ответ считается ошибкой, хотя авторы такого не наблюдали. Само слово токенизатор режет на части: ▁ en tail ment.",
-      sts: "Регрессию T5 тоже сводит к тексту: оценка сходства округляется до шага \\(0.2\\) и пишется строкой. Получается задача на 21 класс от «1.0» до «5.0»; ответ, который не читается как число в этом диапазоне, считается ошибкой. Здесь «4.2» — один токен.",
+      sts: "Регрессию T5 тоже сводит к тексту: оценка сходства округляется до шага \\(0.2\\) и пишется строкой. Ошибка обучает токенам записи числа, а не расстоянию между числовыми оценками; строку затем разбирает код оценки. Здесь «4.2» — один токен.",
       sum: "Суммаризация — генерация длинного ответа; для неё и перевода авторы использовали лучевой поиск с шириной \\(4\\), для остальных задач — жадное декодирование."
     }[task];
     return [
@@ -191,23 +188,18 @@ function mountT5Flow(box){
     ][step];
   }
 
-  const player = vlPlayer(box, { count: () => MODES[mode].steps.length, draw, label: (i, n) => `шаг ${i + 1} из ${n}: ${MODES[mode].steps[i]}`, interval: 2600 });
-  box.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
-    mode = b.dataset.mode;
-    box.querySelectorAll("[data-mode]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
-    player.stop();
-    player.go(Math.min(player.i, MODES[mode].steps.length - 1));
-  }));
+  const player = vlPlayer(box, { count: () => count, draw: i => draw(first + i), label: (i, n) => `шаг ${i + 1} из ${n}: ${MODES[mode].steps[first + i]}`, interval: 2600 });
   box.querySelectorAll("[data-task]").forEach((b) => b.addEventListener("click", () => {
     task = b.dataset.task;
     box.querySelectorAll("[data-task]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
     player.paint();
   }));
   player.paint();
-  const unobserve = cbResize(stage, () => draw(player.i));
+  const unobserve = cbResize(stage, () => draw(first + player.i));
   return () => { player.stop(); unobserve(); };
 }
 
 Object.assign(FIGURES, {
-  "t5-flow": mountT5Flow
+  "t5-flow": mountT5Flow,
+  "t5-tasks": box => mountT5Flow(box, "t2t", 0, 4)
 });

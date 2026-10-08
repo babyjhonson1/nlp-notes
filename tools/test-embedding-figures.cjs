@@ -27,24 +27,26 @@ const ctx = vm.createContext({
   }
 });
 const run = code => vm.runInContext(code, ctx);
-for (const f of ['assets/core.js', 'figures/common.js', 'figures/vl.js', 'figures/mdl.js', 'figures/colbert.js', 'figures/e5.js', 'figures/sbert.js']) {
+for (const f of ['assets/core.js', 'figures/common.js', 'figures/vl.js', 'figures/mdl.js', 'figures/colbert.js', 'figures/e5.js', 'figures/sbert.js', 'figures/t5.js']) {
   run(fs.readFileSync(path.join(root, f), 'utf8'));
 }
 const specs = { 'colbert-encode': 3, 'colbert-flow': 3, 'colbert-index': 4,
   'e5-flow': 3, 'e5-distill': 4, 'e5-prefixes': 2,
-  'sbert-flow': 4, 'sbert-contrastive': 4, 'sbert-distill': 4, 'sbert-use': 2 };
+  'sbert-flow': 4, 'sbert-contrastive': 4, 'sbert-distill': 4, 'sbert-use': 2,
+  't5-flow': 4, 't5-tasks': 4 };
 let frames = 0;
 for (const width of [340, 480, 680]) {
   for (const [id, count] of Object.entries(specs)) {
     const box = element(), stage = element(), svg = element(), say = element(), status = element();
     const back = element(), fwd = element(), play = element();
     const docs = [element({ doc: 'pos' }), element({ doc: 'neg' })];
-    const rows = ['train', 'pt', 'ft', 'use'].map(row => element({ row }));
+    const rows = ['train', 'pt', 'ft', 'use', 't2t'].map(row => element({ row }));
     const s1 = ['init', 'pt'].map(v => element({ s1: v }));
     const s2 = ['pt', 'ft'].map(v => element({ s2: v }));
     const prefs = ['ok', 'none', 'pp'].map(v => element({ pref: v }));
     const modes = ['nli', 'sts'].map(mode => element({ mode }));
     const batches = ['mixed', 'same'].map(batch => element({ batch }));
+    const tasks = ['tr', 'nli', 'sts', 'sum'].map(task => element({ task }));
     stage.getBoundingClientRect = () => ({ width });
     stage.querySelector = () => svg;
     const selectors = {
@@ -54,7 +56,7 @@ for (const width of [340, 480, 680]) {
     };
     box.querySelector = s => selectors[s] || null;
     const lists = { '[data-doc]': docs, '[data-row]': rows, '[data-s1]': s1, '[data-s2]': s2, '[data-pref]': prefs,
-      '[data-mode]': id === 'sbert-flow' ? modes : [], '[data-batch]': batches };
+      '[data-mode]': id === 'sbert-flow' ? modes : [], '[data-batch]': batches, '[data-task]': tasks };
     box.querySelectorAll = s => lists[s] || [];
     const cleanup = run('FIGURES[' + JSON.stringify(id) + ']')(box);
     const viewBox = svg.attrs.viewBox;
@@ -76,6 +78,15 @@ for (const width of [340, 480, 680]) {
       assert.match(status.textContent, new RegExp('шаг ' + (i + 1) + ' из ' + count));
     }
     assert.ok(fwd.disabled);
+    if (id === 't5-flow') {
+      back.fire('click'); check();
+      assert.match(say.innerHTML, /0\.24/);
+      assert.match(say.innerHTML, /Sea.*недоступно/);
+    }
+    if (id === 't5-tasks') {
+      for (const task of tasks) { task.fire('click'); check(); }
+      assert.equal(tasks.at(-1).attrs['aria-selected'], 'true');
+    }
     if (id === 'sbert-flow') {
       modes[1].fire('click'); check();
       assert.equal(modes[1].attrs['aria-selected'], 'true');
