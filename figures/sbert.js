@@ -1,7 +1,7 @@
 /* Иллюстрация раздела models/sbert: устройство сети, прямой и обратный проход
    и место функции потерь для каждого рецепта обучения. Помощники — figures/mdl.js. */
 
-function mountSbertFlow(box){
+function mountSbertFlow(box, modes = ["nli", "sts"], first = 2, count = 4){
   const PREM = "A man is playing a guitar on stage.", HYP = "A person is performing music.";
   const KA = ["cls", "tok", "tok", "tok", "tok", "tok", "tok", "tok", "tok", "tok", "sep"];
   const KB = ["cls", "tok", "tok", "tok", "tok", "tok", "tok", "sep", "pad", "pad", "pad"];
@@ -26,7 +26,7 @@ function mountSbertFlow(box){
     distill: { tab: "Дистилляция", steps: ["предложение и перевод", "прямой проход", "пулинг", "функция потерь", "обратный проход"] },
     use: { tab: "Применение", steps: ["текст", "прямой проход", "пулинг и нормировка", "сравнение"] }
   };
-  let mode = "nli", batch = "same";
+  let mode = modes[0], batch = "same";
 
   const T = (M) => M[0].map((_, j) => M.map((r) => r[j]));
   const softRows = (M, k) => M.map((r) => { const z = r.map((x) => k * x), mx = Math.max(...z), e = z.map((x) => Math.exp(x - mx)), t = e.reduce((a, b) => a + b, 0); return e.map((x) => x / t); });
@@ -42,13 +42,13 @@ function mountSbertFlow(box){
 
   box.innerHTML = `
     <div class="fig-stage"><svg tabindex="0" role="img" aria-label="Схема обучения SBERT: прямой проход, функция потерь и обратный проход"></svg></div>
-    <div class="fig-row">
-      <div class="fig-tabs mdl-tabs" role="tablist" aria-label="Рецепт обучения">${Object.entries(MODES).map(([k, m]) => `<button type="button" role="tab" data-mode="${k}" aria-selected="${k === mode}">${m.tab}</button>`).join("")}</div>
+    <div class="fig-row"${modes.length === 1 ? " hidden" : ""}>
+      <div class="fig-tabs mdl-tabs" role="tablist" aria-label="Рецепт обучения">${modes.map(k => `<button type="button" role="tab" data-mode="${k}" aria-selected="${k === mode}">${MODES[k].tab}</button>`).join("")}</div>
     </div>
     <div class="fig-row" data-batchrow hidden>
       <span class="fig-seg">батч<span class="fig-tabs" role="tablist" aria-label="Состав батча">
         <button type="button" role="tab" data-batch="mixed" aria-selected="false">разные темы</button>
-        <button type="button" role="tab" data-batch="same" aria-selected="true">один набор</button>
+        <button type="button" role="tab" data-batch="same" aria-selected="true">одна тема</button>
       </span></span>
     </div>
     ${vlControls()}
@@ -273,7 +273,7 @@ function mountSbertFlow(box){
       nli: [
         "<b>Пара предложений.</b> Посылка и гипотеза из NLI токенизируются по отдельности: \\(11\\) и \\(8\\) токенов. В батче последовательности выравнивают по длине, и гипотезу дополняют тремя заполнителями <code>[PAD]</code> с маской \\(m_i=0\\).",
         shared[0], shared[1],
-        "<b>Голова.</b> Склейка \\([u;\\,v;\\,\\lvert u-v\\rvert]\\in\\mathbb{R}^{2304}\\), линейный слой \\(W_t\\in\\mathbb{R}^{3\\times2304}\\) и softmax дают вероятности трёх меток \\(o\\). Отношение пары входит в логиты только через \\(\\lvert u-v\\rvert\\). Голова нужна только при обучении.",
+        "<b>Голова.</b> Склейка \\([u;\\,v;\\,\\lvert u-v\\rvert]\\in\\mathbb{R}^{2304}\\), линейный слой \\(W_t\\in\\mathbb{R}^{3\\times2304}\\) и softmax дают вероятности трёх меток \\(o\\). Дополнительный признак взаимодействия — \\(\\lvert u-v\\rvert\\). Голова нужна только при обучении.",
         "<b>Функция потерь.</b> Перекрёстная энтропия с правильной меткой: \\(\\mathcal{L}=-\\log o_{y}\\), здесь \\(y\\) — «следование». Потери велики, если правильной метке досталась малая вероятность.",
         "<b>Обратный проход.</b> Градиент идёт от \\(\\mathcal{L}\\) через \\(W_t\\) к \\(u\\) и \\(v\\), через пулинг — к векторам настоящих токенов и дальше по обоим проходам. Веса общие, поэтому вклады складываются: \\(\\frac{\\partial\\mathcal{L}}{\\partial\\theta}=\\frac{\\partial\\mathcal{L}}{\\partial u}\\frac{\\partial u}{\\partial\\theta}+\\frac{\\partial\\mathcal{L}}{\\partial v}\\frac{\\partial v}{\\partial\\theta}\\). Заполнители градиента не получают."
       ],
@@ -285,7 +285,7 @@ function mountSbertFlow(box){
         "<b>Обратный проход.</b> Градиент \\(2\\bigl(\\cos(u,v)-y\\bigr)\\) проходит через косинус к \\(u\\) и \\(v\\), а дальше, как в режиме NLI, по обоим проходам в общие веса \\(\\theta\\)."
       ],
       all: [
-        "<b>Батч пар.</b> Три пары \\((a_i,b_i)\\); правильный ответ к \\(a_i\\) — \\(b_i\\). Переключатель выше меняет состав батча: пары на разные темы или пары из одного набора, все про вход в аккаунт. Настоящий батч all-* — \\(1024\\) пары из двух наборов.",
+        "<b>Батч пар.</b> Три пары \\((a_i,b_i)\\); правильный ответ к \\(a_i\\) — \\(b_i\\). Переключатель выше меняет состав батча: пары на разные темы или тематически близкие пары про вход в аккаунт. Настоящий батч all-* — \\(1024\\) пары из двух наборов.",
         "<b>Прямой проход.</b> Все шесть текстов проходят через одну сеть. Левая и правая колонки — роли в паре, а не разные модели.",
         "<b>Пулинг и нормировка.</b> Среднее по токенам, затем модуль Normalize: все векторы единичной длины, и скалярное произведение совпадает с косинусом.",
         "<b>Матрица сходств.</b> \\(S_{ij}=\\cos(u_i,v_j)\\): правильные пары на диагонали, остальные клетки — негативы из батча. Числа — косинусы обученной all-MiniLM-L6-v2. " +
@@ -295,7 +295,7 @@ function mountSbertFlow(box){
                 : `Позитивы забирают почти всю вероятность, потери по строкам \\(\\mathcal{L}_{a\\to b}\\approx${texSmall(st.lr)}\\): такой батч почти ничему не учит.`),
         "<b>Softmax по столбцам.</b> Теперь каждый ответ \\(b_j\\) выбирает свой вопрос среди \\(a_i\\), и итог \\(\\mathcal{L}=\\tfrac12(\\mathcal{L}_{a\\to b}+\\mathcal{L}_{b\\to a})\\) " +
           (same ? `\\(=\\tfrac12(${texSmall(st.lr)}+${texSmall(st.lc)})=${texSmall((st.lr + st.lc) / 2)}\\). Ответ про смену пароля в Settings → Security отдаёт \\(${mdlNum(st.C[0][1], 2)}\\) вопросу о сбросе пароля; по строкам эта путаница почти не видна (\\(${mdlNum(st.P[0][1], 2)}\\)).`
-                : `\\(\\approx${texSmall((st.lr + st.lc) / 2)}\\). Чтобы потери были заметны, негативы должны быть похожи на позитивы: поэтому батч собирают из одного-двух наборов.`),
+                : `\\(\\approx${texSmall((st.lr + st.lc) / 2)}\\). На этом примере близкие по теме негативы дают больший обучающий сигнал. Сборка батча из небольшого числа источников может помочь, но сама по себе не гарантирует трудных негативов.`),
         "<b>Обратный проход.</b> Градиент приходит в каждую клетку \\(S\\): позитивы тянутся вверх, негативы — вниз пропорционально своей вероятности (<a href=\"#/reference/training-objectives/obj-infonce\">справочник</a>). Каждый вектор получает сигнал от всех пар батча, и вклады складываются в общие веса."
       ],
       distill: [
@@ -309,23 +309,23 @@ function mountSbertFlow(box){
         "<b>Текст.</b> После обучения голов нет: от модели остаются кодировщик и пулинг, и каждый текст кодируется отдельно.",
         "<b>Прямой проход</b> такой же, как при обучении: токены проходят все слои, на выходе — вектор на каждый токен.",
         "<b>Пулинг и нормировка.</b> Среднее по настоящим токенам, у all-* затем Normalize. Вектор \\(u\\) можно вычислить и сохранить в индекс заранее.",
-        "<b>Сравнение.</b> Косинус с сохранёнными векторами (all-MiniLM-L6-v2, как в примере раздела): \\(0.576\\) у следующей гипотезы, \\(0.549\\) у противоречащей, \\(-0.083\\) у несвязанной. Косинус измеряет близость содержания, а не логическое следование."
+        "<b>Сравнение.</b> Косинус с сохранёнными векторами (all-MiniLM-L6-v2, как в примере раздела): \\(0.576\\) у следующей гипотезы, \\(0.549\\) у фразы о другом месте, \\(-0.083\\) у несвязанной. Косинус измеряет близость содержания, а не логическое следование."
       ]
     };
     return T_[mode][step];
   }
 
   const player = vlPlayer(box, {
-    count: () => MODES[mode].steps.length,
-    draw,
-    label: (i, n) => `шаг ${i + 1} из ${n}: ${MODES[mode].steps[i]}`,
+    count: () => count,
+    draw: i => draw(first + i),
+    label: (i, n) => `шаг ${i + 1} из ${n}: ${MODES[mode].steps[first + i]}`,
     interval: 2200
   });
   box.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
     mode = b.dataset.mode;
     box.querySelectorAll("[data-mode]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
     player.stop();
-    player.go(Math.min(player.i, MODES[mode].steps.length - 1));
+    player.go(Math.min(player.i, count - 1));
   }));
   box.querySelectorAll("[data-batch]").forEach((b) => b.addEventListener("click", () => {
     batch = b.dataset.batch;
@@ -333,10 +333,13 @@ function mountSbertFlow(box){
     player.paint();
   }));
   player.paint();
-  const unobserve = cbResize(stage, () => draw(player.i));
+  const unobserve = cbResize(stage, () => draw(first + player.i));
   return () => { player.stop(); unobserve(); };
 }
 
 Object.assign(FIGURES, {
-  "sbert-flow": mountSbertFlow
+  "sbert-flow": mountSbertFlow,
+  "sbert-contrastive": box => mountSbertFlow(box, ["all"], 3, 4),
+  "sbert-distill": box => mountSbertFlow(box, ["distill"], 1, 4),
+  "sbert-use": box => mountSbertFlow(box, ["use"], 2, 2)
 });
