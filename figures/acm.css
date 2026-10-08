@@ -1,0 +1,32 @@
+/* agents/context-memory: локальное оформление сравнения контекстов. */
+.acm-stage { display: grid; gap: 12px; }
+.acm-budget { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 12px; }
+.acm-budget b { font-size: 14px; color: var(--chapter-ink); }
+.acm-budget > span { font-size: 12px; color: var(--muted); }
+.acm-meter { height: 9px; border: 1px solid var(--rule); border-radius: 5px; overflow: hidden; background: var(--bg); }
+.acm-meter > div { height: 100%; background: var(--g1); }
+.acm-overflow .acm-meter > div { background: var(--g4); }
+.acm-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.acm-panel { min-width: 0; }
+.fig .acm-panel h3 { margin: 0 0 10px; font: 600 13px var(--ui); color: var(--ink); }
+.acm-card { border: 1px solid var(--rule); border-left: 3px solid var(--acm-color); border-radius: 6px; padding: 9px 10px; margin-bottom: 8px; background: var(--bg); overflow-wrap: anywhere; }
+.acm-raw { --acm-color: var(--g1); }
+.acm-compressed { --acm-color: var(--g3); }
+.acm-omitted { --acm-color: var(--rule); }
+.acm-card-head { display: flex; flex-wrap: wrap; gap: 4px 8px; justify-content: space-between; }
+.acm-card-head b { font-size: 12px; color: var(--ink); }
+.acm-card-head small { font-size: 11px; color: var(--muted); }
+.fig .acm-card p { margin: 6px 0; font-size: 12px; line-height: 1.55; color: var(--ink); }
+.acm-label { display: block; font-size: 11px; color: var(--muted); }
+.fig .acm-verdict { margin: 0; font-size: 14px; font-weight: 600; color: var(--chapter-ink); }
+.acm-overflow .acm-verdict { color: var(--g4); }
+.acm-modes button[aria-pressed="true"] { border-color: var(--chapter); background: var(--tint); color: var(--chapter-ink); }
+.acm-range { flex-wrap: wrap; }
+.acm-range input { width: 170px; max-width: 100%; }
+.acm-key { display: inline-block; width: 14px; height: 10px; border-radius: 2px; background: var(--acm-color); }
+@media (max-width: 650px) {
+  .acm-columns { grid-template-columns: minmax(0, 1fr); }
+  .acm-panel:first-child .acm-card p { display: none; }
+  .acm-card { padding: 8px; }
+  .acm-modes .fig-btn { height: auto; min-height: 32px; white-space: normal; text-align: left; }
+}
