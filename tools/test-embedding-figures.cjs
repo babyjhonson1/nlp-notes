@@ -27,16 +27,21 @@ const ctx = vm.createContext({
   }
 });
 const run = code => vm.runInContext(code, ctx);
-for (const f of ['assets/core.js', 'figures/common.js', 'figures/vl.js', 'figures/mdl.js', 'figures/colbert.js']) {
+for (const f of ['assets/core.js', 'figures/common.js', 'figures/vl.js', 'figures/mdl.js', 'figures/colbert.js', 'figures/e5.js']) {
   run(fs.readFileSync(path.join(root, f), 'utf8'));
 }
-const specs = { 'colbert-encode': 3, 'colbert-flow': 3, 'colbert-index': 4 };
+const specs = { 'colbert-encode': 3, 'colbert-flow': 3, 'colbert-index': 4,
+  'e5-flow': 3, 'e5-distill': 4, 'e5-prefixes': 2 };
 let frames = 0;
 for (const width of [340, 480, 680]) {
   for (const [id, count] of Object.entries(specs)) {
     const box = element(), stage = element(), svg = element(), say = element(), status = element();
     const back = element(), fwd = element(), play = element();
-    const docs = [element({ doc: 'pos' }), element({ doc: 'neg' })], rows = [element({ row: 'train' })];
+    const docs = [element({ doc: 'pos' }), element({ doc: 'neg' })];
+    const rows = ['train', 'pt', 'ft', 'use'].map(row => element({ row }));
+    const s1 = ['init', 'pt'].map(v => element({ s1: v }));
+    const s2 = ['pt', 'ft'].map(v => element({ s2: v }));
+    const prefs = ['ok', 'none', 'pp'].map(v => element({ pref: v }));
     stage.getBoundingClientRect = () => ({ width });
     stage.querySelector = () => svg;
     const selectors = {
@@ -44,7 +49,8 @@ for (const width of [340, 480, 680]) {
       '[data-act="back"]': back, '[data-act="fwd"]': fwd, '[data-act="play"]': play
     };
     box.querySelector = s => selectors[s] || null;
-    box.querySelectorAll = s => s === '[data-doc]' ? docs : s === '[data-row]' ? rows : [];
+    const lists = { '[data-doc]': docs, '[data-row]': rows, '[data-s1]': s1, '[data-s2]': s2, '[data-pref]': prefs };
+    box.querySelectorAll = s => lists[s] || [];
     const cleanup = run('FIGURES[' + JSON.stringify(id) + ']')(box);
     const viewBox = svg.attrs.viewBox;
     assert.equal(Number(viewBox.split(' ')[2]), width);
@@ -74,6 +80,26 @@ for (const width of [340, 480, 680]) {
       assert.match(say.innerHTML, /5\.70/);
       assert.equal(docs[1].attrs['aria-selected'], 'true');
       check();
+    }
+    if (id === 'e5-flow') {
+      s1[1].fire('click'); check();
+      assert.equal(s1[1].attrs['aria-selected'], 'true');
+      assert.equal(rows.find(r => r.dataset.row === 'pt').hidden, false);
+      assert.equal(rows.find(r => r.dataset.row === 'ft').hidden, true);
+    }
+    if (id === 'e5-distill') {
+      s2[1].fire('click'); check();
+      assert.equal(s2[1].attrs['aria-selected'], 'true');
+      back.fire('click'); check();
+      assert.match(say.innerHTML, /1\.29/); // KL дообученного чекпойнта в сохранённом примере
+    }
+    if (id === 'e5-prefixes') {
+      back.fire('click');
+      for (const pref of prefs) {
+        pref.fire('click'); check();
+        assert.equal(pref.attrs['aria-selected'], 'true');
+      }
+      assert.match(say.innerHTML, /Первыми стали тарифы/);
     }
     box.fire('keydown', { key: 'ArrowLeft' });
     play.fire('click');

@@ -1,7 +1,7 @@
 /* Иллюстрация раздела models/e5: контрастивное предобучение одной сети на слабых парах,
    дообучение с учителем (KL и InfoNCE) и поиск с префиксами. Помощники — figures/mdl.js. */
 
-function mountE5Flow(box){
+function mountE5Flow(box, mode = "pt", first = 3, count = 3){
   // Этап 1: три слабые пары (тексты написаны для примера). Косинусы bert-base-uncased (среднее по токенам,
   // те же префиксы) и e5-base-unsupervised — E5 после первого этапа.
   const PAIRS = [
@@ -42,7 +42,7 @@ function mountE5Flow(box){
     ft: { tab: "Дообучение", steps: ["запрос и кандидаты", "учитель", "ученик", "функция потерь", "обратный проход"] },
     use: { tab: "Применение", steps: ["индексация", "запрос", "сравнение", "абсолютные значения"] }
   };
-  let mode = "pt", s1 = "init", s2 = "pt", pref = "ok";
+  let s1 = "init", s2 = "pt", pref = "ok";
 
   const softmax = (r) => { const mx = Math.max(...r), e = r.map((x) => Math.exp(x - mx)), t = e.reduce((a, b) => a + b, 0); return e.map((x) => x / t); };
   const lse = (r) => { const mx = Math.max(...r); return mx + Math.log(r.reduce((a, x) => a + Math.exp(x - mx), 0)); };
@@ -66,9 +66,6 @@ function mountE5Flow(box){
 
   box.innerHTML = `
     <div class="fig-stage"><svg tabindex="0" role="img" aria-label="Схема E5: предобучение одной сети на слабых парах, дообучение с учителем и поиск с префиксами"></svg></div>
-    <div class="fig-row">
-      <div class="fig-tabs mdl-tabs" role="tablist" aria-label="Этап">${Object.entries(MODES).map(([k, m]) => `<button type="button" role="tab" data-mode="${k}" aria-selected="${k === mode}">${m.tab}</button>`).join("")}</div>
-    </div>
     <div class="fig-row" data-row="pt">
       <span class="fig-seg e5-seg">веса<span class="fig-tabs" role="tablist" aria-label="Веса сети">
         <button type="button" role="tab" data-s1="init" aria-selected="true">до обучения</button>
@@ -272,11 +269,11 @@ function mountE5Flow(box){
           (init ? " До обучения это bert-base-uncased." : ""),
         "<b>Среднее и нормировка.</b> Вектор текста — среднее по всем токенам последнего слоя, включая токены префикса, затем нормировка до единичной длины, так что скалярное произведение равно косинусу.",
         "<b>Матрица косинусов.</b> \\(S_{ij}=\\cos(E_{q_i},E_{p_j})\\): позитивы на диагонали, остальные клетки — негативы из батча. " +
-          (init ? "До обучения все косинусы между \\(0.71\\) и \\(0.82\\), а у первого и третьего запросов чужие документы ближе своего (выделены): средний вектор BERT почти не зависит от смысла."
-                : "После первого этапа свой документ ближе чужих на \\(0.09\\)–\\(0.13\\); при \\(1/\\tau=100\\) это \\(9\\)–\\(13\\) единиц логита."),
+          (init ? "У исходного BERT косинусы этих примеров между \\(0.71\\) и \\(0.82\\), а у первого и третьего запросов чужие документы ближе своего (выделены): на этих трёх парах исходный BERT со средним пулингом выбирает не свой документ. Это не общая оценка всех его представлений."
+                : "У опубликованного E5-PT свой документ ближе чужих на \\(0.09\\)–\\(0.13\\); при \\(1/\\tau=100\\) это \\(9\\)–\\(13\\) единиц логита."),
         "<b>Softmax и потери.</b> Строки умножаются на \\(1/\\tau=100\\), в клетках — вероятности документов для каждого запроса, справа — потери строк \\(-\\log P_{ii}\\). " +
           (init ? `Первый запрос отдаёт своему документу лишь \\(${mdlNum(st.P[0][0], 2)}\\), потери строки \\(${mdlNum(st.L[0], 2)}\\); среднее по батчу \\(\\mathcal{L}=${mdlNum(st.mean, 2)}\\).`
-                : `Позитивы забирают почти всю вероятность, \\(\\mathcal{L}\\approx${texSmall(st.mean)}\\). На таких парах модель почти не учится: градиент дают близкие негативы, а в большом батче они встречаются чаще.`),
+                : `Позитивы забирают почти всю вероятность, \\(\\mathcal{L}\\approx${texSmall(st.mean)}\\). Для этих кандидатов ошибка почти нулевая; более близкие негативы дали бы больший сигнал. Это сравнение опубликованных весов, не запись процесса обучения.`),
         "<b>Обратный проход.</b> Градиент идёт из каждой клетки к векторам запросов и документов, а от них — в одну и ту же сеть: вклады обеих сторон пары складываются в общих весах. Эмбеддинги позиций при этом заморожены."
       ][step];
     }
@@ -310,13 +307,7 @@ function mountE5Flow(box){
     ][step];
   }
 
-  const player = vlPlayer(box, { count: () => MODES[mode].steps.length, draw, label: (i, n) => `шаг ${i + 1} из ${n}: ${MODES[mode].steps[i]}`, interval: 2400 });
-  box.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
-    mode = b.dataset.mode;
-    box.querySelectorAll("[data-mode]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
-    player.stop();
-    player.go(Math.min(player.i, MODES[mode].steps.length - 1));
-  }));
+  const player = vlPlayer(box, { count: () => count, draw: i => draw(i + first), label: (i, n) => `шаг ${i + 1} из ${n}: ${MODES[mode].steps[i + first]}`, interval: 2400 });
   const bind = (attr, set) => box.querySelectorAll(`[data-${attr}]`).forEach((b) => b.addEventListener("click", () => {
     set(b.dataset[attr]);
     box.querySelectorAll(`[data-${attr}]`).forEach((x) => x.setAttribute("aria-selected", String(x === b)));
@@ -326,10 +317,12 @@ function mountE5Flow(box){
   bind("s2", (v) => { s2 = v; });
   bind("pref", (v) => { pref = v; });
   player.paint();
-  const unobserve = cbResize(stage, () => draw(player.i));
+  const unobserve = cbResize(stage, () => draw(player.i + first));
   return () => { player.stop(); unobserve(); };
 }
 
 Object.assign(FIGURES, {
-  "e5-flow": mountE5Flow
+  "e5-flow": mountE5Flow,
+  "e5-distill": box => mountE5Flow(box, "ft", 1, 4),
+  "e5-prefixes": box => mountE5Flow(box, "use", 2, 2)
 });
