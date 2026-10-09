@@ -448,6 +448,22 @@
             "span corruption",
             "masked language modeling"
           ]
+        },
+        {
+          "id": "adam-adamw",
+          "title": "Оптимизаторы: Adam и AdamW",
+          "status": "done",
+          "summary": "От градиента SGD к двум скользящим статистикам Adam: смысл моментов, вывод bias correction и покоординатное обновление на двух шагах. Различие L2 и weight decay выводится через SGD и Adam; AdamW отделяет уменьшение весов от адаптивного шага, но не от расписания learning rate. Проверяемая реализация без ML-библиотек и соответствие PyTorch.",
+          "concepts": [
+            "Adam",
+            "AdamW",
+            "SGD",
+            "exponential moving average",
+            "bias correction",
+            "L2-регуляризация",
+            "decoupled weight decay",
+            "learning rate"
+          ]
         }
       ]
     }
