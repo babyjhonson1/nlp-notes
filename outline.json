@@ -138,34 +138,54 @@
           "id": "continuous-batching",
           "title": "Continuous batching",
           "status": "done",
-          "summary": "Как сервер LLM обслуживает поток запросов: фазы prefill и decode, почему decode упирается в пропускную способность памяти, простои статического батчинга, continuous batching с планированием на каждом шаге, плоский батч, chunked prefill, память под KV-cache и вытеснение, движки vLLM, SGLang, TensorRT-LLM, TGI.",
+          "summary": "Как сервер LLM обслуживает поток запросов: prefill и decode, расчёт KV-cache с согласованными единицами, ограничение пропускной способностью памяти, статический и continuous batching, плоский батч, chunked prefill и вытеснение. Различаются ITL и средний TPOT; параметры vLLM 0.31.0, инвариантность к батчу и связь с декодированием.",
           "concepts": [
             "prefill",
             "decode",
-            "static batching",
             "continuous batching",
             "chunked prefill",
             "KV-cache",
             "PagedAttention",
-            "vLLM"
+            "TTFT",
+            "ITL и TPOT",
+            "goodput",
+            "batch invariance"
           ]
         },
         {
           "id": "paged-attention",
           "title": "PagedAttention и prefix caching",
           "status": "done",
-          "summary": "Почему непрерывный резерв KV-cache под максимальную длину теряет большую часть памяти (резерв, внутренняя и внешняя фрагментация) и как PagedAttention устраняет это блоками и таблицей блоков с потерями не больше одного блока; цена косвенной адресации и выбор размера блока. Общие блоки со счётчиком ссылок для параллельной выборки и beam search, prefix caching через цепочку хешей блоков, LRU-вытеснение и RadixAttention, следствия для промптов, агентного цикла и RAG, изоляция кеша; параметры и метрики vLLM 0.31.",
+          "summary": "От потерь непрерывного резерва KV-cache к блокам, таблице адресации и выбору размера блока; общие префиксы для независимых выборок и beam search. Prefix caching через цепочку хешей, LRU и RadixAttention: зависимость кеша от контекста и позиции, применение в агентах и RAG, изоляция арендаторов; параметры vLLM 0.31.",
           "concepts": [
             "PagedAttention",
             "block table",
             "фрагментация памяти",
             "reference count",
             "copy-on-write",
+            "beam search",
             "prefix caching",
-            "хеш блока",
             "LRU-вытеснение",
             "RadixAttention",
             "cache_salt"
+          ]
+        },
+        {
+          "id": "decoding",
+          "title": "Декодирование: от логитов к токенам",
+          "status": "done",
+          "summary": "От распределения следующего токена к greedy, beam search и случайной выборке: сквозной условный пример, температура, top-k, top-p, min-p и интерактивное сравнение. Штрафы за повторы, зависимость результата от порядка преобразований, остановка, исходные и обработанные logprobs, границы воспроизводимости. Проверяемый семплер на Python без модели и пример настроек vLLM 0.31.0.",
+          "concepts": [
+            "logits",
+            "greedy decoding",
+            "beam search",
+            "temperature",
+            "top-k",
+            "top-p",
+            "min-p",
+            "repetition penalties",
+            "stop conditions",
+            "logprobs"
           ]
         }
       ]

@@ -2,7 +2,7 @@
 
 /* ---------- Почему батч: время decode-шага и пропускная способность ---------- */
 function mountCbRoofline(box){
-  const WGT = 14e9, BWD = 3e12, PEAK = 6e14, KVT = 5e5, MEM = 58e9, FPT = 14e9;
+  const WGT = 14e9, BWD = 3e12, PEAK = 6e14, KVT = 524288, MEM = 58e9, FPT = 14e9;
   const CTXS = [512, 2048, 8192], YMIN = 100, YMAX = 20000;
   let ctx = 2048, bi = 5;
   const model = (b, c) => {
@@ -13,6 +13,8 @@ function mountCbRoofline(box){
   const cap = (c) => Math.floor(MEM / (c * KVT));
 
   box.innerHTML = `
+    <div class="fig-stage" style="margin-top:12px"><svg class="cb-roof" role="img" aria-label="Пропускная способность decode в зависимости от размера батча"></svg></div>
+    <div class="fig-stage" style="margin-top:6px"><svg class="cb-bar" role="img" aria-label="Из чего складывается время шага"></svg></div>
     <div class="fig-row">
       <label class="fig-range">размер батча <input type="range" min="0" max="9" step="1" value="${bi}" data-b> <output>${2 ** bi}</output></label>
       <span class="spacer"></span>
@@ -20,13 +22,11 @@ function mountCbRoofline(box){
         <span class="fig-tabs" role="tablist" aria-label="Средняя длина контекста">${CTXS.map((c) => `<button type="button" data-ctx="${c}" aria-selected="${c === ctx}">${c}</button>`).join("")}</span>
       </span>
     </div>
-    <div class="fig-stage" style="margin-top:12px"><svg class="cb-roof" role="img" aria-label="Пропускная способность decode в зависимости от размера батча"></svg></div>
-    <div class="fig-stage" style="margin-top:6px"><svg class="cb-bar" role="img" aria-label="Из чего складывается время шага"></svg></div>
     <p class="fig-say" aria-live="polite"></p>
     <div class="fig-legend">${legend([
       [`<svg viewBox="0 0 22 14"><line x1="2" y1="7" x2="20" y2="7" class="cb-curve"/></svg>`, "выбранная длина контекста"],
       [`<svg viewBox="0 0 22 14"><line x1="2" y1="7" x2="20" y2="7" class="cb-curve other"/></svg>`, "другие длины"],
-      [`<svg viewBox="0 0 22 14"><line x1="2" y1="7" x2="20" y2="7" class="cb-ideal"/></svg>`, "если бы шаг не дорожал с ростом B"],
+      [`<svg viewBox="0 0 22 14"><line x1="2" y1="7" x2="20" y2="7" class="cb-ideal"/></svg>`, "если бы шаг не дорожал с ростом размера батча"],
       [`<svg viewBox="0 0 22 14"><rect x="3" y="1.5" width="16" height="11" class="cb-wall"/><line x1="3" y1="1" x2="3" y2="13" class="cb-wall-l"/></svg>`, "кеш не помещается в память"]
     ])}</div>`;
   const svg = box.querySelector(".cb-roof"), bar = box.querySelector(".cb-bar"), say = box.querySelector(".fig-say");
@@ -109,10 +109,10 @@ function mountCbRoofline(box){
     const m1 = model(1, ctx);
     const times = (v) => { const d = v < 10 ? 1 : 0, n = Math.round(v); return `в ${fmtN(v, d)} ${d ? "раза" : plural(n, "раз", "раза", "раз")}`; };
     const gain = m.tp / m1.tp, slow = m.t / m1.t;
-    let t = `<b>B = ${B}</b>, контекст ${ctx} токенов: шаг длится ${fmtMs(m.t)} мс, `;
+    let t = `<b>\\(B = ${B}\\)</b>, контекст ${ctx} токенов: шаг длится ${fmtMs(m.t)} мс, `;
     if (B === 1) t += `и почти всё это время GPU читает 14 ГБ весов ради одного токена. Получается ${Math.round(m.tp)} токенов в секунду.`;
     else {
-      t += `из них ${fmtMs(m.w)} мс на чтение весов и ${fmtMs(m.kv)} мс на чтение кеша. Это ${Math.round(m.tp).toLocaleString("ru-RU")} токенов в секунду — ${times(gain)} больше, чем при B = 1`;
+      t += `из них ${fmtMs(m.w)} мс на чтение весов и ${fmtMs(m.kv)} мс на чтение кеша. Это ${Math.round(m.tp).toLocaleString("ru-RU")} токенов в секунду — ${times(gain)} больше, чем при \\(B = 1\\)`;
       t += gain >= B / 2 ? `, а шаг подорожал всего ${times(slow)}.`
         : `: шаг подорожал ${times(slow)}${m.kv > m.w ? ", и большая часть времени уходит на чтение кеша" : ""}.`;
     }
