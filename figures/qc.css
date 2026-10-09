@@ -1,0 +1,25 @@
+/* rag/query-context */
+.qc-stage { display: grid; align-content: start; gap: 12px; min-height: 400px; }
+.qc-question { margin: 0; color: var(--ink); font-size: 13px; line-height: 1.5; }
+.qc-candidates { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.qc-card {
+  display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px;
+  padding: 9px; border: 1px solid var(--rule); border-radius: 6px;
+  color: var(--ink); font-size: 12px; line-height: 1.4;
+}
+.qc-card.qc-kept { background: color-mix(in srgb, var(--g1) 12%, var(--bg)); border-color: var(--g1); }
+.qc-card.qc-next { background: color-mix(in srgb, var(--fig-accent) 10%, var(--bg)); border-color: var(--fig-accent); box-shadow: inset 0 0 0 1px var(--fig-accent); }
+.qc-selected { color: var(--chapter); font-size: 13px; font-weight: 600; min-height: 22px; }
+.qc-table { margin: 0; }
+.qc-table table { font-size: 12px; font-variant-numeric: tabular-nums; }
+.qc-table th, .qc-table td { padding: 7px 8px; }
+.qc-table td { text-align: right; }
+.qc-winner { background: color-mix(in srgb, var(--fig-accent) 10%, var(--bg)); }
+.qc-key { display: inline-block; width: 18px; height: 11px; border-radius: 3px; }
+.qc-key.qc-kept { background: var(--g1); }
+.qc-key.qc-next { border: 2px solid var(--fig-accent); }
+@media (max-width: 560px) {
+  .qc-candidates { grid-template-columns: 1fr; }
+  .qc-stage { min-height: 530px; }
+  .qc-table table { min-width: 400px; }
+}
