@@ -27,7 +27,7 @@ const ctx = vm.createContext({
   }
 });
 const run = code => vm.runInContext(code, ctx);
-for (const f of ['assets/core.js', 'figures/common.js', 'figures/vl.js', 'figures/mdl.js', 'figures/colbert.js', 'figures/e5.js', 'figures/sbert.js', 'figures/t5.js']) {
+for (const f of ['assets/core.js', 'figures/common.js', 'figures/vl.js', 'figures/mdl.js', 'figures/colbert.js', 'figures/e5.js', 'figures/sbert.js', 'figures/t5.js', 'figures/xlmr.js']) {
   run(fs.readFileSync(path.join(root, f), 'utf8'));
 }
 const specs = { 'colbert-encode': 3, 'colbert-flow': 3, 'colbert-index': 4,
@@ -138,6 +138,38 @@ for (const width of [340, 480, 680]) {
     assert.equal(timers.size, 0);
     assert.ok(observers.at(-1).closed);
   }
+}
+for (const width of [340, 480, 680]) {
+  const box = element(), stage = element(), svg = element(), say = element(), input = element();
+  input.nextElementSibling = element();
+  stage.getBoundingClientRect = () => ({ width });
+  stage.querySelector = () => svg;
+  const selectors = { '.fig-stage': stage, '.fig-say': say, '[data-range="alpha"]': input };
+  box.querySelector = s => selectors[s];
+  const cleanup = run('FIGURES["xlmr-sampling"]')(box);
+  const viewBox = svg.attrs.viewBox;
+  const samples = {};
+  for (const value of [0, 6, 10, 14, 20]) {
+    input.value = String(value); input.fire('input'); frames++;
+    assert.equal(svg.attrs.viewBox, viewBox);
+    assert.doesNotMatch(svg.innerHTML + say.textContent, /undefined|NaN|Infinity/);
+    assert.match(say.textContent, /условные данные/);
+    samples[value] = say.textContent;
+    // Координаты кругов — сами доли на линейной шкале 0–100%.
+    const points = [...svg.innerHTML.matchAll(/<circle cx="([\d.]+)"[^>]+class="xlmr-q"/g)].map(m => +m[1]);
+    assert.equal(points.length, 3);
+    const left = width < 480 ? 80 : 102;
+    const right = width - (width < 480 ? 50 : 76) - 14;
+    const z = [100, 10, 1].reduce((s, n) => s + n ** (value / 20), 0);
+    for (let i = 0; i < 3; i++) {
+      const expected = left + [100, 10, 1][i] ** (value / 20) / z * (right - left);
+      assert.ok(Math.abs(points[i] - expected) < .06);
+    }
+  }
+  assert.match(samples[0], /Языки равновероятны/);
+  assert.match(samples[20], /одинаковой частотой/);
+  observers.at(-1).f();
+  cleanup(); assert.ok(observers.at(-1).closed);
 }
 const p = 1 / (1 + Math.exp(-0.7));
 assert.ok(Math.abs(p - 0.6681877722) < 1e-9);
