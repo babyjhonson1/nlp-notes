@@ -2,6 +2,86 @@
    Полные объяснения живут в главе «Справочник», а этот реестр питает всплывающие карточки. */
 
 const GLOSSARY = Object.freeze({
+  recall: {
+    label: "Recall@k",
+    name: "Полнота поиска",
+    definition: "Доля известных релевантных объектов, попавших в первые \\(k\\) результатов.",
+    formula: "\\[\\operatorname{Recall@}k=\\frac{|D_k(q)\\cap R_q|}{|R_q|}.\\]",
+    detail: "\\(D_k(q)\\) — выдача до выбранной глубины, \\(R_q\\) — все известные релевантные объекты запроса. При пустом \\(R_q\\) значение не определено. Это не ANN-recall относительно точного поиска.",
+    href: "#/reference/retrieval-metrics/metrics-pr"
+  },
+  mmr: {
+    label: "MMR",
+    name: "Maximal Marginal Relevance",
+    definition: "Жадный отбор по релевантности со штрафом за повтор уже выбранного. Это критерий отбора, не метрика качества.",
+    formula: "\\[\\begin{aligned}i^\\ast&amp;=\\arg\\max_{i\\in C\\setminus S}\\left[\\lambda r_i-(1-\\lambda)\\max_{j\\in S}s_{ij}\\right],\\\\&amp;0\\le\\lambda\\le1.\\end{aligned}\\]",
+    detail: "\\(C\\) — кандидаты, \\(S\\) — выбранные, \\(r_i\\) — релевантность, \\(s_{ij}\\) — попарное сходство в согласованной шкале. В наших примерах первый элемент выбирают по релевантности. Не путать с MRR.",
+    href: "#/reference/retrieval-metrics/metrics-mmr-selection"
+  },
+  evidence: {
+    label: "Evidence coverage",
+    name: "Покрытие доказательств",
+    definition: "Доля обязательных единиц доказательства, поддержанных контекстом.",
+    formula: "\\[\\begin{aligned}\\operatorname{EC}(q,C)&amp;=\\frac{\\sum_{e\\in E_q}h(e,C)}{|E_q|},\\\\\\operatorname{Complete}(q,C)&amp;=\\mathbb{1}[\\operatorname{EC}(q,C)=1].\\end{aligned}\\]",
+    detail: "\\(E_q\\) — непустой набор требований к доказательствам; \\(h\\) равен единице при достаточной поддержке. Повторы одного доказательства не закрывают другие требования. Complete требует покрытия всех единиц.",
+    href: "#/reference/retrieval-metrics/metrics-evidence"
+  },
+  faithfulness: {
+    label: "Faithfulness",
+    name: "Подтверждённость контекстом",
+    definition: "Доля проверяемых утверждений ответа, подтверждённых фактическим контекстом.",
+    formula: "\\[\\operatorname{Faithfulness}(a,C)=\\frac{\\sum_{c\\in A(a)}e(c,C)}{|A(a)|}.\\]",
+    detail: "\\(A(a)\\) — уникальные утверждения ответа, \\(e\\) — индикатор достаточной поддержки со всеми условиями. Не измеряет полноту или истинность самого источника. При отсутствии утверждений значение не определено.",
+    href: "#/reference/generation-metrics/genm-faithfulness"
+  },
+  correctness: {
+    label: "Answer correctness",
+    name: "Полная правильность ответа",
+    definition: "В этом конспекте — доля ответов, полностью удовлетворяющих проверенной рубрике задачи.",
+    formula: "\\[\\operatorname{Correctness}(Q)=\\frac{1}{|Q|}\\sum_{q\\in Q}z_q.\\]",
+    detail: "\\(z_q\\) равен единице, если все обязательные факты покрыты, нет существенных ошибок и выполнены требования. Для неответимых вопросов рубрика задаёт корректный отказ. Это выбранный протокол, не универсальная формула библиотек; \\(Q\\) непусто.",
+    href: "#/reference/generation-metrics/genm-correctness"
+  },
+  factf1: {
+    label: "Fact-level F1",
+    name: "Фактическая F1",
+    definition: "Баланс совпадения утверждений ответа с обязательными фактами эталона.",
+    formula: "\\[F_{1,\\mathrm{fact}}=\\frac{2M}{|A(a)|+|G(y)|}.\\]",
+    detail: "\\(M\\) — число семантически согласованных пар один к одному, \\(A(a)\\) — уникальные утверждения ответа, \\(G(y)\\) — обязательные факты эталона. При двух пустых множествах значение не определено. Допустимые добавления к эталону оговариваются заранее.",
+    href: "#/reference/generation-metrics/genm-correctness"
+  },
+  citationprecision: {
+    label: "Citation precision",
+    name: "Точность цитирования",
+    definition: "В простом протоколе — доля связей «утверждение — источник», в которых источник сам подтверждает утверждение.",
+    formula: "\\[\\operatorname{CitationPrecision}=\\frac{\\sum_{(c,d)\\in L}e(c,d)}{|L|}.\\]",
+    detail: "\\(L\\) — уникальные связи с приведёнными источниками, \\(e\\) — индикатор поддержки. Неверный ID считается ошибкой. При отсутствии ссылок значение не определено. Для совместного доказательства нужен более тонкий протокол.",
+    href: "#/reference/generation-metrics/genm-citations"
+  },
+  citationrecall: {
+    label: "Citation recall",
+    name: "Полнота цитирования",
+    definition: "Доля требующих ссылки утверждений, подтверждённых совокупностью своих ссылок.",
+    formula: "\\[\\operatorname{CitationRecall}=\\frac{\\sum_{c\\in A_{\\mathrm{cite}}}\\mathbb{1}[S_c\\ne\\varnothing]\\,e(c,S_c)}{|A_{\\mathrm{cite}}|}.\\]",
+    detail: "\\(A_{\\mathrm{cite}}\\) — утверждения, требующие ссылки, \\(S_c\\) — процитированные для утверждения источники. Не измеряет полноту ответа относительно вопроса. Если требующих ссылки утверждений нет, значение не определено.",
+    href: "#/reference/generation-metrics/genm-citations"
+  },
+  coverage: {
+    label: "Answer coverage",
+    name: "Доля содержательных ответов",
+    definition: "Доля вопросов, на которые система ответила, а не отказала.",
+    formula: "\\[\\operatorname{Coverage}=\\frac{\\sum_{q\\in Q}u_q}{|Q|}.\\]",
+    detail: "\\(u_q\\) равен единице при содержательном ответе, нулю при отказе; \\(Q\\) непусто. Показывается вместе с риском и срезами ответимости. Не путать с покрытием доказательств.",
+    href: "#/reference/generation-metrics/genm-abstention"
+  },
+  risk: {
+    label: "Selective risk",
+    name: "Избирательный риск",
+    definition: "Частота ошибок среди выданных содержательных ответов.",
+    formula: "\\[\\operatorname{Risk}=\\frac{\\sum_{q\\in Q}u_q\\ell_q}{\\sum_{q\\in Q}u_q}.\\]",
+    detail: "\\(u_q\\) — индикатор содержательного ответа, \\(\\ell_q\\) — индикатор ошибки по рубрике. При полном отказе риск не определён. Сравнивать при сопоставимой доле ответов.",
+    href: "#/reference/generation-metrics/genm-abstention"
+  },
   mrr: {
     label: "MRR",
     name: "Mean Reciprocal Rank",
