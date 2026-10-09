@@ -161,6 +161,24 @@
             "LLM-as-judge",
             "paired bootstrap"
           ]
+        },
+        {
+          "id": "generation-safety",
+          "title": "Генерация, цитирование и безопасность",
+          "status": "done",
+          "summary": "Ответ о восстановлении аккаунта: сохранение условий, привязка утверждений к диапазонам источников, структурная и смысловая проверка цитат. Конфликты версий, уточнение, частичный ответ и отказ; вывод порога решения из цены ошибки с оговоркой о калибровке. Косвенный prompt injection и отравление данных, границы доверия и полномочий, ограничения промптов и проверяющей модели; исполняемый валидатор цитат с контрпримером неподтверждённого ответа.",
+          "concepts": [
+            "grounded generation",
+            "attribution",
+            "citation validation",
+            "source provenance",
+            "conflicting evidence",
+            "abstention",
+            "calibration",
+            "indirect prompt injection",
+            "data poisoning",
+            "trust boundary"
+          ]
         }
       ]
     },
