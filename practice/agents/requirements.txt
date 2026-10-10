@@ -1,0 +1,6 @@
+# Проверено на Python 3.13.2; веса моделей не входят в зависимости.
+langgraph==1.2.14
+langchain-core==1.6.9
+huggingface-hub==1.33.0
+ipykernel==7.4.0
+nbformat==5.11.1
