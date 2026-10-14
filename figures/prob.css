@@ -1,0 +1,6 @@
+/* Иллюстрация раздела reference/probability-information (префикс классов: prob). */
+
+.prob-area { fill: color-mix(in srgb, var(--muted) 22%, var(--bg)); stroke: var(--muted); stroke-width: 1; }
+.prob-fwd, .prob-rev { fill: none; stroke-width: 2.2; stroke-linejoin: round; }
+.prob-fwd { stroke: var(--g2); }
+.prob-rev { stroke: var(--g1); }

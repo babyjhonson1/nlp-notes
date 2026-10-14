@@ -7,7 +7,7 @@
 | Раздел | ID | Состояние |
 | --- | --- | --- |
 | Метрики генерации | `generation-metrics` | Написана RAG-часть; общие метрики требуют дополнения |
-| Вероятности и информация | `probability-information` | В оглавлении пустой; нужен до `ml/linear-models` |
+| Вероятности и информация | `probability-information` | Готов; [проверка](notes/reference-probability-information.md) |
 | Метрики классификации | `classification-metrics` | Запланирован; нужен до `ml/calibration` |
 | Выбор метода классификации текста | `text-classification` | Запланирован; возможен перенос в «Классический NLP» |
 | Аугментации текста и проверка на малых данных | `text-augmentation` | Запланирован |
