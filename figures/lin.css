@@ -1,0 +1,7 @@
+/* Иллюстрации раздела ml/linear-models (префикс классов: lin). */
+
+.lin-c-log, .lin-c-mse, .lin-c-conv, .lin-c-sep { fill: none; stroke-width: 2.2; stroke-linejoin: round; }
+.lin-c-log { stroke: var(--g1); }
+.lin-c-mse { stroke: var(--g4); }
+.lin-c-conv { stroke: var(--g3); }
+.lin-c-sep { stroke: var(--fig-bad); }

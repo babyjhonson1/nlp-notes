@@ -511,6 +511,24 @@
             "McNemar test",
             "paired bootstrap"
           ]
+        },
+        {
+          "id": "linear-models",
+          "title": "Линейная и логистическая регрессия",
+          "status": "done",
+          "summary": "MSE как MLE при гауссовом шуме, нормальное уравнение и его стоимость, почему решают через QR/SVD, предпосылки Гаусса — Маркова; мультиколлинеарность через VIF и dummy trap. Логистическая регрессия: log-loss из правдоподобия Бернулли, градиент (p−y)x, выпуклость, почему не MSE поверх сигмоиды (рисунок потерь и градиентов). Вес как log odds ratio на примере слова в отзывах, неидентифицируемость при коррелированных признаках, отсутствие MLE на разделимых данных с рисунком роста веса, softmax против one-vs-rest и multilabel; TF-IDF + LogisticRegression в scikit-learn 1.9.",
+          "concepts": [
+            "OLS",
+            "normal equation",
+            "multicollinearity",
+            "VIF",
+            "logistic regression",
+            "log-loss",
+            "log-odds",
+            "separability",
+            "softmax regression",
+            "one-vs-rest"
+          ]
         }
       ]
     },
