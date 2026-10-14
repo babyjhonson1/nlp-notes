@@ -15,7 +15,7 @@
 | 1 | Обобщение: риск, переобучение, bias–variance | `generalization` | Готов; [проверка](notes/ml-generalization.md) |
 | 2 | Валидация и выбор модели | `validation` | Готов; [проверка](notes/ml-validation.md) |
 | 3 | Линейная и логистическая регрессия | `linear-models` | Готов; [проверка](notes/ml-linear-models.md) |
-| 4 | Регуляризация: L2, L1 и ранняя остановка | `regularization` | Запланирован |
+| 4 | Регуляризация: L2, L1 и ранняя остановка | `regularization` | Готов; [проверка](notes/ml-regularization.md) |
 | 5 | Градиентная оптимизация | `optimization` | Запланирован |
 | 6 | Деревья решений | `trees` | Запланирован |
 | 7 | Бэггинг и случайный лес | `random-forest` | Запланирован |

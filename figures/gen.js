@@ -127,7 +127,7 @@ function mountGenKnn(box){
 
 /* Ширина viewBox подстраивается под блок, чтобы подписи на телефоне не мельчали. */
 const genWidth = (el) => Math.round(Math.max(290, Math.min(640, el.getBoundingClientRect().width || 560)));
-const genNum = (v) => String(v).replace(".", ",");
+const genNum = (v) => String(v).replace(".", ",").replace("-", "−");
 const genPts = (pts, sx, sy) => pts.map(([x, y]) => `${f1(sx(x))},${f1(sy(y))}`).join(" ");
 
 function genPlot(o){
