@@ -475,7 +475,7 @@
     },
     {
       "id": "ml",
-      "title": "Классическое ML",
+      "title": "Классический ML",
       "color": "#A47A1E",
       "sections": [
         {
@@ -493,6 +493,23 @@
             "learning curve",
             "curse of dimensionality",
             "double descent"
+          ]
+        },
+        {
+          "id": "validation",
+          "title": "Валидация и выбор модели",
+          "status": "done",
+          "summary": "Hold-out и k-fold: что именно оценивает CV, выбор K, LOO для линейных сглаживателей, почему интервал по фолдам слишком узкий. Разбиение как вопрос к модели (стратифицированное, групповое, временное), смещение отбора лучшей конфигурации и вложенная CV, утечки на отзывах с примером ESL об отборе признаков до CV. Сетка, случайный и байесовский поиск; парное сравнение двух моделей тестом McNemar и бутстрэпом, вложенная CV с GroupKFold в scikit-learn.",
+          "concepts": [
+            "k-fold CV",
+            "nested CV",
+            "GroupKFold",
+            "TimeSeriesSplit",
+            "selection bias",
+            "data leakage",
+            "random search",
+            "McNemar test",
+            "paired bootstrap"
           ]
         }
       ]
