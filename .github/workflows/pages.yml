@@ -27,6 +27,14 @@ jobs:
         run: python3 tools/check.py
       - name: Синтаксис JavaScript
         run: for f in assets/*.js figures/*.js; do node --check "$f" || exit 1; done
+      # Артефакт загружается здесь, а не в deploy: повторный запуск упавшего
+      # deploy не создаёт второй артефакт github-pages в том же прогоне.
+      - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/configure-pages@v5
+      - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
@@ -36,10 +44,5 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
       - id: deployment
         uses: actions/deploy-pages@v4
