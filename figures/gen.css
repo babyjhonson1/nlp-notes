@@ -27,6 +27,41 @@
 .gen-dot.val { fill: var(--g2); }
 .gen-stage + .fig-row .fig-range input[type="range"] { width: min(320px, 60vw); }
 
+
+/* статичные графики */
+.gen-grid { stroke: var(--rule); stroke-width: 1; }
+.gen-axis-line { stroke: var(--muted); stroke-width: 1; opacity: .6; }
+.gen-tick { fill: var(--muted); font-size: 10.5px; }
+.gen-note { fill: var(--ink); font-size: 11px; }
+.gen-c-bias, .gen-c-var, .gen-c-total, .gen-c-train, .gen-c-test { fill: none; stroke-width: 2; stroke-linejoin: round; }
+.gen-c-bias { stroke: var(--g1); }
+.gen-c-var { stroke: var(--g4); }
+.gen-c-total { stroke: var(--ink); stroke-width: 2.4; }
+.gen-c-train { stroke: var(--g3); }
+.gen-c-test { stroke: var(--g2); }
+.gen-c-noise { stroke: var(--muted); stroke-width: 1.3; }
+.gen-c-thr { stroke: var(--fig-bad); stroke-width: 1.3; }
+.gen-c-best { fill: var(--bg); stroke: var(--ink); stroke-width: 2; }
+.gen-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.gen-panel-title { margin: 0 0 4px; font-family: var(--ui); font-size: 13px; color: var(--ink); }
+
+/* мишени смещения и дисперсии */
+.gen-targets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.gen-target svg { max-width: 150px; margin: 0 auto; }
+.gen-target p { margin: 6px 0 0; text-align: center; font-family: var(--ui); font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+.gen-ring { stroke: var(--rule); stroke-width: 1; }
+.gen-ring.a { fill: color-mix(in srgb, var(--rule) 45%, var(--bg)); }
+.gen-ring.b { fill: var(--bg); }
+.gen-bull { fill: var(--ink); }
+.gen-shot { fill: var(--g3); stroke: var(--bg); stroke-width: .8; }
+.gen-mean { fill: none; stroke: var(--fig-accent); stroke-width: 2.2; }
+
+/* концентрация расстояний */
+.gen-d-range { stroke: var(--muted); stroke-width: 1.4; }
+.gen-d-mid { fill: color-mix(in srgb, var(--g1) 55%, var(--bg)); stroke: var(--g1); stroke-width: 1; }
+.gen-d-med { stroke: var(--ink); stroke-width: 2; }
+
 @media (max-width: 620px) {
-  .gen-stage { grid-template-columns: 1fr; }
+  .gen-stage, .gen-pair { grid-template-columns: 1fr; }
+  .gen-targets { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

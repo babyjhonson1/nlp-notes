@@ -97,5 +97,92 @@ assert tr[1] == 0 and round(100 * va[1], 1) == 25.9 and round(100 * bayes, 1) ==
 assert round(100 * best, 1) == 16.1 and {k for k in ks if va[k] <= best + 0.01} == {5, 7, 9, 13}
 assert round(100 * va[99], 1) == 50.7
 assert round(100 * 2 * bayes * (1 - bayes), 1) == 24.8
+
+# 5. Рисунок gen-bv-curve: точное разложение kNN-регрессии, минимум суммарной ошибки.
+def knn_curve(n=50, n_test=400, sigma2=0.25):
+    g = lambda x: math.sin(2 * math.pi * x) + 0.5 * math.sin(6 * math.pi * x)
+    grid = [(i + 0.5) / n for i in range(n)]
+    bias2 = [0.0] * (n + 1)
+    for t in range(n_test):
+        x0 = (t + 0.5) / n_test
+        acc = 0.0
+        for j, x in enumerate(sorted(grid, key=lambda x: abs(x - x0))):
+            acc += g(x)
+            bias2[j + 1] += (g(x0) - acc / (j + 1)) ** 2 / n_test
+    return {k: sigma2 + bias2[k] + sigma2 / k for k in range(1, n + 1)}
+
+curve = knn_curve()
+assert min(curve, key=curve.get) == 6 and curve[50] > curve[1] > curve[6]
+
+# 6. Линейная регрессия с гауссовскими признаками: формулы рисунков gen-learning и gen-dd.
+def solve(a, rhs):
+    m = [row[:] + [v] for row, v in zip(a, rhs)]
+    size = len(m)
+    for c in range(size):
+        piv = max(range(c, size), key=lambda r: abs(m[r][c]))
+        m[c], m[piv] = m[piv], m[c]
+        for r in range(size):
+            if r != c and m[r][c]:
+                factor = m[r][c] / m[c][c]
+                m[r] = [x - factor * y for x, y in zip(m[r], m[c])]
+    return [m[i][size] / m[i][i] for i in range(size)]
+
+def least_squares(xp, y):
+    n, p = len(xp), len(xp[0])
+    if p < n:
+        gram = [[sum(xp[i][a] * xp[i][c] for i in range(n)) for c in range(p)] for a in range(p)]
+        return solve(gram, [sum(xp[i][a] * y[i] for i in range(n)) for a in range(p)])
+    gram = [[sum(xp[i][a] * xp[j][a] for a in range(p)) for j in range(n)] for i in range(n)]
+    alpha = solve(gram, y)                                   # решение с минимальной нормой
+    return [sum(xp[i][a] * alpha[i] for i in range(n)) for a in range(p)]
+
+def simulate(p, n, beta2, sigma2, reps, seed):
+    r, beta = random.Random(seed), [math.sqrt(b) for b in beta2]
+    train = test = 0.0
+    for _ in range(reps):
+        x = [[r.gauss(0, 1) for _ in beta] for _ in range(n)]
+        y = [sum(a * b for a, b in zip(row, beta)) + r.gauss(0, math.sqrt(sigma2)) for row in x]
+        w = least_squares([row[:p] for row in x], y)
+        train += sum((yi - sum(a * b for a, b in zip(row[:p], w))) ** 2 for row, yi in zip(x, y)) / n
+        test += sigma2 + sum(b2 for b2 in beta2[p:]) + sum((beta[j] - w[j]) ** 2 for j in range(p))
+    return train / reps, test / reps
+
+def dd_risk(p, n, beta2, sigma2):
+    head, rest = sum(beta2[:p]), sum(beta2[p:])
+    if p <= n - 2:
+        return (rest + sigma2) * (1 + p / (n - p - 1))
+    return head * (1 - n / p) + (rest + sigma2) * (1 + n / (p - n - 1))
+
+weights = [1 / (j + 1) for j in range(30)]
+beta2 = [w / sum(weights) for w in weights]
+for p_, seed in ((4, 1), (24, 2)):
+    train_mc, test_mc = simulate(p_, 12, beta2, 0.1, 3000, seed)
+    assert abs(test_mc / dd_risk(p_, 12, beta2, 0.1) - 1) < 0.03, (p_, test_mc)
+    if p_ < 12:                                             # формулы кривых обучения
+        s2 = 0.1 + sum(beta2[p_:])
+        assert abs(train_mc / (s2 * (12 - p_) / 12) - 1) < 0.03, train_mc
+
+weights = [1 / (j + 1) for j in range(200)]
+beta2 = [w / sum(weights) for w in weights]
+left = {p_: dd_risk(p_, 40, beta2, 0.1) for p_ in range(1, 39)}
+right = {p_: dd_risk(p_, 40, beta2, 0.1) for p_ in range(42, 201)}
+bl, br = min(left, key=left.get), min(right, key=right.get)
+assert (bl, round(left[bl], 2), br, round(right[br], 2)) == (8, 0.80, 115, 0.89)
+assert left[bl] < right[br]                                  # подпись: лучшая модель слева
+
+# 7. Рисунок gen-dist: тот же генератор, отношение самого дальнего расстояния к ближайшему.
+r = mulberry32(5)
+ratios = {}
+for d in (2, 10, 100, 768):
+    q = [r() for _ in range(d)]
+    dist = []
+    for _ in range(1000):
+        acc = 0.0
+        for j in range(d):
+            t = r() - q[j]
+            acc += t * t
+        dist.append(math.sqrt(acc))
+    ratios[d] = max(dist) / min(dist)
+assert round(ratios[100], 2) == 1.42 and round(ratios[768], 2) == 1.12, ratios
 print('generalization: код из HTML, формула kNN против моделирования, концентрация расстояний, '
-      'числа иллюстрации — OK; без моделей.')
+      'числа и формулы всех рисунков — OK; без моделей.')
