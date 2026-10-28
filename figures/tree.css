@@ -1,0 +1,41 @@
+/* Иллюстрации раздела ml/trees (префикс классов: tree). */
+
+.tree-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+.tree-charts { display: grid; gap: 4px; }
+.tree-leaf { stroke: var(--muted); stroke-width: 1; stroke-opacity: .55; }
+.tree-leaf.neg { fill: color-mix(in srgb, var(--fig-bad) 13%, var(--bg)); }
+.tree-leaf.pos { fill: color-mix(in srgb, var(--g1) 11%, var(--bg)); }
+.tree-pt { stroke: var(--bg); stroke-width: 1; }
+.tree-pt.neg { fill: var(--fig-bad); }
+.tree-pt.pos { fill: var(--g1); }
+.tree-cur { fill: none; stroke: var(--fig-accent); stroke-width: 2; stroke-dasharray: 5 3; }
+.tree-cand { stroke: var(--fig-accent); stroke-width: 2.2; stroke-dasharray: 6 3; fill: none; }
+.tree-scan { fill: none; stroke: var(--muted); stroke-width: 1.8; stroke-linejoin: round; }
+.tree-scan.win { stroke: var(--fig-accent); }
+.tree-top { fill: var(--bg); stroke: var(--muted); stroke-width: 2; }
+.tree-top.win { stroke: var(--fig-accent); }
+.tree-win { font-weight: 600; }
+
+.tree-c-gini, .tree-c-ent, .tree-c-err, .tree-c-tree, .tree-c-lin { fill: none; stroke-width: 2.2; stroke-linejoin: round; }
+.tree-c-gini { stroke: var(--g1); }
+.tree-c-ent { stroke: var(--g3); }
+.tree-c-err { stroke: var(--g4); }
+.tree-chord { stroke: var(--ink); stroke-width: 1.4; }
+.tree-dot { stroke: var(--bg); stroke-width: 1; }
+.tree-dot.tree-c-gini { fill: var(--g1); }
+.tree-dot.tree-c-ent { fill: var(--g3); }
+.tree-dot.tree-c-err { fill: var(--g4); }
+.tree-chord-dot { fill: var(--bg); stroke: var(--ink); stroke-width: 1.6; }
+.tree-c-tree { stroke: var(--fig-bad); }
+.tree-c-lin { stroke: var(--g3); stroke-dasharray: 6 4; }
+.tree-obs { fill: var(--muted); }
+.tree-future { fill: color-mix(in srgb, var(--rule) 40%, var(--bg)); }
+
+@media (max-width: 620px) {
+  .tree-stage { grid-template-columns: 1fr; }
+}
