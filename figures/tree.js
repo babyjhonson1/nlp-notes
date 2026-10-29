@@ -1,5 +1,6 @@
 /* Иллюстрации раздела ml/trees (префикс: tree).
-   Используют vlControls и vlPlayer из figures/vl.js, genPlot, genStatic, genKey и genPts из figures/gen.js. */
+   Используют qMark из figures/common.js, vlControls и vlPlayer из figures/vl.js,
+   genPlot, genStatic, genKey и genPts из figures/gen.js. */
 
 /* ---------- Данные: условные заказы, признаки — задержка доставки и цена, цель — негативный отзыв ---------- */
 
@@ -71,6 +72,130 @@ function treeLeaves(root, k){
 }
 const treeLabel = (nd) => (2 * treePos(nd.pts) > nd.pts.length ? 1 : 0);
 const treeError = (root, pts, k) => pts.reduce((a, q) => a + (treeLabel(treeLeafOf(root, q.x, k)) !== q.y ? 1 : 0), 0) / pts.length;
+
+/* ---------- Устройство дерева: путь заказа от корня до листа ---------- */
+
+/* 10 условных заказов из ручного примера раздела: [задержка, цена, негатив] */
+const TREE_HAND = [[1, 33, 1], [2, 11, 0], [3, 29, 1], [4, 14, 0], [5, 36, 1], [5.5, 9, 0], [7, 10, 1], [8, 12, 1], [9, 8, 1], [10, 13, 1]];
+
+function mountTreeAnatomy(box){
+  const NEW = [
+    { name: "А", x: [4, 30] }, { name: "Б", x: [2, 12] }, { name: "В", x: [8, 15] }
+  ];
+  /* узлы схемы: координаты центров, текст, для листьев — ответ и состав */
+  const N = {
+    root: { x: 150, y: 30, q: ["задержка ≤ 6,25 дня?"] },
+    price: { x: 82, y: 112, q: ["цена ≤ 21,5 тыс. ₽?"] },
+    neg4: { x: 240, y: 112, leaf: 1, q: ["негатив", "негативных 4 из 4"] },
+    pos3: { x: 52, y: 196, leaf: 0, q: ["без негатива", "негативных 0 из 3"] },
+    neg3: { x: 154, y: 196, leaf: 1, q: ["негатив", "негативных 3 из 3"] }
+  };
+  const EDGES = [["root", "price", "да"], ["root", "neg4", "нет"], ["price", "pos3", "да"], ["price", "neg3", "нет"]];
+  const pathOf = ([d, p]) => (d <= 6.25 ? ["root", "price", p <= 21.5 ? "pos3" : "neg3"] : ["root", "neg4"]);
+  let sel = 0;
+
+  box.innerHTML = `
+    <div class="fig-stage tree-anat">
+      <svg class="tree-diagram" viewBox="0 0 300 228" role="img" aria-label="Схема дерева решений из трёх листьев"></svg>
+      <svg class="tree-anat-plane" viewBox="0 0 300 250" role="img" aria-label="Те же листья как прямоугольники на плоскости признаков"></svg>
+    </div>
+    <div class="fig-row">
+      <div class="fig-tabs" role="tablist" aria-label="Новый заказ">
+        ${NEW.map((o, i) => `<button type="button" role="tab" data-o="${i}" aria-selected="${i === 0}">Заказ ${o.name}</button>`).join("")}
+      </div>
+    </div>
+    <p class="fig-say" aria-live="polite"></p>
+    <div class="fig-legend">
+      <span><svg viewBox="0 0 22 14"><circle cx="11" cy="7" r="4" class="tree-pt neg"/></svg>обучающий заказ с негативным отзывом</span>
+      <span><svg viewBox="0 0 22 14"><circle cx="11" cy="7" r="4" class="tree-pt pos"/></svg>без негатива</span>
+      <span><svg viewBox="0 0 22 14"><path d="M11 1.5 16.5 7 11 12.5 5.5 7z" class="tree-new"/></svg>новый заказ и его путь</span>
+    </div>`;
+  const diag = box.querySelector(".tree-diagram"), plane = box.querySelector(".tree-anat-plane"), say = box.querySelector(".fig-say");
+  const L = 36, R = 8, T = 8, B = 34, W = 300, H = 250;
+  const px = (v) => L + v / 11 * (W - L - R), py = (v) => H - B - v / 40 * (H - T - B);
+
+  function draw(){
+    const o = NEW[sel], path = pathOf(o.x), on = new Set(path);
+    let s = "";
+    for (const [a, b, lab] of EDGES){
+      const hot = on.has(a) && on.has(b);
+      s += `<line class="tree-edge${hot ? " hot" : ""}" x1="${N[a].x}" y1="${N[a].y + 14}" x2="${N[b].x}" y2="${N[b].y - 16}"/>`;
+      s += `<text class="tree-edge-lab${hot ? " hot" : ""}" x="${f1((N[a].x + N[b].x) / 2 + (N[b].x < N[a].x ? -8 : 8))}" y="${f1((N[a].y + N[b].y) / 2 + 2)}" text-anchor="middle">${lab}</text>`;
+    }
+    for (const [id, nd] of Object.entries(N)){
+      const w = nd.leaf === undefined ? 132 : 96, h = nd.leaf === undefined ? 28 : 34, hot = on.has(id);
+      const cls = nd.leaf === undefined ? "tree-q" : `tree-lf ${nd.leaf ? "neg" : "pos"}`;
+      s += `<rect class="${cls}${hot ? " hot" : ""}" x="${nd.x - w / 2}" y="${nd.y - h / 2}" width="${w}" height="${h}" rx="6"/>`;
+      if (nd.q.length === 1) s += `<text class="tree-node-t" x="${nd.x}" y="${nd.y + 4}" text-anchor="middle">${nd.q[0]}</text>`;
+      else s += `<text class="tree-node-t" x="${nd.x}" y="${nd.y - 2}" text-anchor="middle">${nd.q[0]}</text><text class="tree-node-s" x="${nd.x}" y="${nd.y + 11}" text-anchor="middle">${nd.q[1]}</text>`;
+    }
+    s += `<text class="gen-tick" x="4" y="${N.root.y + 4}">корень</text><text class="gen-tick" x="4" y="226">листья</text>`;
+    diag.innerHTML = s;
+
+    let p = "";
+    const rect = (x0, x1, y0, y1, cls) => `<rect class="${cls}" x="${f1(px(x0))}" y="${f1(py(y1))}" width="${f1(px(x1) - px(x0))}" height="${f1(py(y0) - py(y1))}"/>`;
+    const leafOn = path[path.length - 1];
+    p += rect(0, 6.25, 0, 21.5, `tree-leaf pos${leafOn === "pos3" ? " hot" : ""}`);
+    p += rect(0, 6.25, 21.5, 40, `tree-leaf neg${leafOn === "neg3" ? " hot" : ""}`);
+    p += rect(6.25, 11, 0, 40, `tree-leaf neg${leafOn === "neg4" ? " hot" : ""}`);
+    [0, 2, 4, 6, 8, 10].forEach((v) => { p += `<text class="gen-tick" x="${f1(px(v))}" y="${H - B + 14}" text-anchor="middle">${v}</text>`; });
+    [0, 10, 20, 30, 40].forEach((v) => { p += `<text class="gen-tick" x="${L - 5}" y="${f1(py(v) + 3.5)}" text-anchor="end">${v}</text>`; });
+    p += `<text class="gen-tick" x="${f1((L + W - R) / 2)}" y="${H - 4}" text-anchor="middle">задержка доставки, дни</text>`;
+    p += `<text class="gen-tick" transform="translate(10 ${f1((T + H - B) / 2)}) rotate(-90)" text-anchor="middle">цена, тыс. ₽</text>`;
+    TREE_HAND.forEach(([d, pr, y]) => { p += `<circle class="tree-pt ${y ? "neg" : "pos"}" cx="${f1(px(d))}" cy="${f1(py(pr))}" r="4.2"/>`; });
+    p += qMark(px(o.x[0]), py(o.x[1]), 8, "tree-new");
+    p += `<rect class="gen-frame" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}"/>`;
+    plane.innerHTML = p;
+
+    const [d, pr] = o.x;
+    const steps = d <= 6.25
+      ? `задержка ${fmtN(d, 0)} дня — не больше 6,25, идём по ветви «да»; цена ${fmtN(pr, 0)} тыс. ₽ — ${pr <= 21.5 ? "не больше 21,5, снова «да»" : "больше 21,5, ветвь «нет»"}`
+      : `задержка ${fmtN(d, 0)} дней — больше 6,25, ветвь «нет»`;
+    const leaf = N[leafOn];
+    say.innerHTML = `<b>Заказ ${o.name}:</b> ${steps}. Попадаем в лист «${leaf.q[0]}»: ${leaf.leaf
+      ? `все обучающие заказы этого листа получили негативный отзыв, поэтому прогноз — негатив с вероятностью 100 %`
+      : `ни один из трёх обучающих заказов этого листа не получил негативного отзыва, поэтому прогноз — без негатива`}. На плоскости справа тот же лист — подсвеченный прямоугольник, в который попала точка заказа.`;
+  }
+  box.querySelectorAll("[data-o]").forEach((b) => b.addEventListener("click", () => {
+    sel = +b.dataset.o;
+    box.querySelectorAll("[data-o]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+    draw();
+  }));
+  draw();
+}
+
+/* ---------- XOR: первый разрез не уменьшает неопределённость ---------- */
+
+function mountTreeXor(box){
+  const r = rng(8), pts = [];
+  for (const [qx, qy] of [[0, 0], [1, 0], [0, 1], [1, 1]])
+    for (let i = 0; i < 10; i++) pts.push([0.08 + 0.36 * r() + qx * 0.5, 0.08 + 0.36 * r() + qy * 0.5, qx ^ qy]);
+  const panels = [
+    { title: "Первый разрез: в каждой половине по 10 точек каждого класса", lines: [[0.5, 0, 0.5, 1]], shade: false },
+    { title: "Второй уровень: четыре чистых листа", lines: [[0.5, 0, 0.5, 1], [0, 0.5, 0.5, 0.5], [0.5, 0.5, 1, 0.5]], shade: true }
+  ];
+  return genStatic(box, `
+    <div class="fig-stage gen-pair">
+      ${panels.map((pn) => `<div><p class="gen-panel-title">${pn.title}</p><div data-plot></div></div>`).join("")}
+    </div>
+    <div class="fig-legend">
+      <span><svg viewBox="0 0 22 14"><circle cx="11" cy="7" r="4" class="tree-pt neg"/></svg>класс 1</span>
+      <span><svg viewBox="0 0 22 14"><circle cx="11" cy="7" r="4" class="tree-pt pos"/></svg>класс 0</span>
+      <span><svg viewBox="0 0 22 14"><line x1="2" y1="7" x2="20" y2="7" class="tree-cand"/></svg>разбиение</span>
+    </div>`, (i, w) => {
+    const pn = panels[i], size = Math.min(w, 300), pad = 22;
+    const sx = (v) => pad + v * (size - pad - 6), sy = (v) => size - pad - v * (size - pad - 6);
+    let s = "";
+    if (pn.shade) [[0, 0, 0], [0.5, 0, 1], [0, 0.5, 1], [0.5, 0.5, 0]].forEach(([x0, y0, c]) => {
+      s += `<rect class="tree-leaf ${c ? "neg" : "pos"}" x="${f1(sx(x0))}" y="${f1(sy(y0 + 0.5))}" width="${f1(sx(0.5) - sx(0))}" height="${f1(sy(0) - sy(0.5))}"/>`;
+    });
+    pn.lines.forEach(([x0, y0, x1, y1]) => { s += `<line class="tree-cand" x1="${f1(sx(x0))}" y1="${f1(sy(y0))}" x2="${f1(sx(x1))}" y2="${f1(sy(y1))}"/>`; });
+    pts.forEach(([x, y, c]) => { s += `<circle class="tree-pt ${c ? "neg" : "pos"}" cx="${f1(sx(x))}" cy="${f1(sy(y))}" r="3.6"/>`; });
+    s += `<rect class="gen-frame" x="${sx(0)}" y="${f1(sy(1))}" width="${f1(sx(1) - sx(0))}" height="${f1(sy(0) - sy(1))}"/>`;
+    s += `<text class="gen-tick" x="${f1(sx(1))}" y="${size - 6}" text-anchor="end">x1</text><text class="gen-tick" x="4" y="${f1(sy(1) + 10)}">x2</text>`;
+    return `<svg viewBox="0 0 ${size} ${size}" role="img" aria-label="${pn.title}">${s}</svg>`;
+  });
+}
 
 /* ---------- Пошаговый рост дерева ---------- */
 
@@ -251,6 +376,8 @@ function mountTreeExtrap(box){
 }
 
 Object.assign(FIGURES, {
+  "tree-anatomy": mountTreeAnatomy,
+  "tree-xor": mountTreeXor,
   "tree-grow": mountTreeGrow,
   "tree-impurity": mountTreeImpurity,
   "tree-extrap": mountTreeExtrap

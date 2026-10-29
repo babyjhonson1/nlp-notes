@@ -36,6 +36,22 @@
 .tree-obs { fill: var(--muted); }
 .tree-future { fill: color-mix(in srgb, var(--rule) 40%, var(--bg)); }
 
+/* устройство дерева */
+.tree-anat { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: center; }
+.tree-edge { stroke: var(--muted); stroke-width: 1.4; }
+.tree-edge.hot { stroke: var(--fig-accent); stroke-width: 2.6; }
+.tree-edge-lab { fill: var(--muted); font-size: 10.5px; }
+.tree-edge-lab.hot { fill: var(--ink); font-weight: 600; }
+.tree-q { fill: var(--bg); stroke: var(--muted); stroke-width: 1.2; }
+.tree-lf { stroke-width: 1.2; }
+.tree-lf.neg { fill: color-mix(in srgb, var(--fig-bad) 14%, var(--bg)); stroke: var(--fig-bad); }
+.tree-lf.pos { fill: color-mix(in srgb, var(--g1) 14%, var(--bg)); stroke: var(--g1); }
+.tree-q.hot, .tree-lf.hot { stroke: var(--fig-accent); stroke-width: 2.6; }
+.tree-node-t { fill: var(--ink); font-size: 11px; }
+.tree-node-s { fill: var(--muted); font-size: 9.5px; }
+.tree-leaf.hot { stroke: var(--fig-accent); stroke-width: 2.6; stroke-opacity: 1; }
+.tree-new { fill: var(--fig-accent); stroke: var(--bg); stroke-width: 1.2; }
+
 @media (max-width: 620px) {
-  .tree-stage { grid-template-columns: 1fr; }
+  .tree-stage, .tree-anat { grid-template-columns: 1fr; }
 }

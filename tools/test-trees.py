@@ -20,6 +20,44 @@ expected = [line[2:] for line in snippet.splitlines() if line.startswith('# ')]
 assert output.getvalue().splitlines() == expected, output.getvalue()
 gini, counts = namespace['gini'], namespace['counts']
 
+# 1a. Ручной пример: 10 заказов, таблица порогов по задержке, порог по цене, второй уровень.
+HAND = [(1, 33, 1), (2, 11, 0), (3, 29, 1), (4, 14, 0), (5, 36, 1), (5.5, 9, 0), (7, 10, 1), (8, 12, 1), (9, 8, 1), (10, 13, 1)]
+assert [d for d, _, _ in HAND] == namespace['delay'] and [y for _, _, y in HAND] == namespace['negative']
+
+def table(pts, f):
+    s = sorted(pts, key=lambda q: q[f])
+    n, total, left, rows = len(s), sum(q[2] for q in s), 0, []
+    for i in range(n - 1):
+        left += s[i][2]
+        if s[i][f] == s[i + 1][f]:
+            continue
+        nl, nr = i + 1, n - i - 1
+        w = nl / n * gini(left, nl) + nr / n * gini(total - left, nr)
+        errors = min(left, nl - left) + min(total - left, nr - (total - left))
+        rows.append(((s[i][f] + s[i + 1][f]) / 2, nl, left, nr, total - left, round(w, 3), round(gini(total, n) - w, 3), errors))
+    return rows
+
+delay_rows = table(HAND, 0)
+assert [r[0] for r in delay_rows] == [1.5, 2.5, 3.5, 4.5, 5.25, 6.25, 7.5, 8.5, 9.5]
+assert [r[6] for r in delay_rows] == [0.02, 0.02, 0.001, 0.053, 0.02, 0.12, 0.077, 0.045, 0.02]
+assert [r[5] for r in delay_rows] == [0.4, 0.4, 0.419, 0.367, 0.4, 0.3, 0.343, 0.375, 0.4]
+price_rows = table(HAND, 1)
+assert all(r[7] == 3 for r in delay_rows + price_rows) and len(delay_rows + price_rows) == 18   # все 18 вопросов: 3 ошибки
+assert max(price_rows, key=lambda r: r[6])[0] == 21.5 and max(r[6] for r in price_rows) == 0.077
+left_group = [q for q in HAND if q[0] <= 6.25]
+assert max(r[6] for r in table(left_group, 0)) == 0.1
+assert max(table(left_group, 1), key=lambda r: r[6])[0::6] == (21.5, 0.5)
+assert round(gini(7, 10), 2) == 0.42 and abs(2 * 6 * 4 / 100 * (0.5 - 1) ** 2 - 0.12) < 1e-12
+imp_delay, imp_price = 0.12, 6 / 10 * 0.5                       # важности MDI
+assert (round(100 * imp_delay / (imp_delay + imp_price)), round(100 * imp_price / (imp_delay + imp_price))) == (29, 71)
+
+# 1b. Регрессия: оценки 5,5,4,2,1,2 при задержке 1,2,3,7,8,9.
+rx, ry = [1, 2, 3, 7, 8, 9], [5, 5, 4, 2, 1, 2]
+sse = lambda a: sum((v - sum(a) / len(a)) ** 2 for v in a)
+gains = {t: sse(ry) - sse([y for x, y in zip(rx, ry) if x <= t]) - sse([y for x, y in zip(rx, ry) if x > t]) for t in (1.5, 2.5, 5, 7.5, 8.5)}
+assert max(gains, key=gains.get) == 5 and abs(gains[5] - 13.5) < 1e-12
+assert (round(sum(ry) / 6, 2), round(sse(ry), 2), round(sse(ry[:3]), 2)) == (3.17, 14.83, 0.67)
+
 # 2. Категории: сортировка по доле негатива находит оптимум среди всех 2^(K-1)-1 разбиений.
 n_all = sum(v[0] for v in counts.values())
 pos_all = sum(v[1] for v in counts.values())
@@ -154,6 +192,29 @@ p_mid = (1 - 30.5 / 100) - p_long                        # 3.1–6.0 дня
 p_exp = 1 - 250.5 / 400                                  # цена >= 25.1 тыс.
 bayes = p_long * 0.15 + p_mid * p_exp * 0.2 + (1 - p_long - p_mid * p_exp) * 0.1
 assert round(100 * bayes) == 13
+
+# Неустойчивость: 200 бутстрэп-выборок из тех же 50 заказов.
+boot = random.Random(0)
+
+def full_leaves(pts):
+    if len(pts) < 2:
+        return 1
+    b = best(pts)
+    if not b or b[2] <= 1e-12:
+        return 1
+    f, thr, _ = b
+    return full_leaves([q for q in pts if q[0][f] <= thr]) + full_leaves([q for q in pts if q[0][f] > thr])
+
+roots, second_delay, leaf_counts = [], 0, []
+for _ in range(200):
+    sample = [train[boot.randrange(50)] for _ in range(50)]
+    f, thr, _ = best(sample)
+    roots.append((f, thr))
+    second_delay += best([q for q in sample if q[0][f] <= thr])[0] == 0
+    leaf_counts.append(full_leaves(sample))
+thresholds = [t for _, t in roots]
+assert all(f == 0 for f, _ in roots) and (round(min(thresholds), 2), round(max(thresholds), 2)) == (2.35, 6.3)
+assert second_delay == 40 and (min(leaf_counts), max(leaf_counts)) == (4, 13)
 
 # 6. Рисунок tree-extrap: дерево глубины 3 даёт 8 листьев и константу за пределами обучения.
 def gauss(r):
