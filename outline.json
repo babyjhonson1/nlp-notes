@@ -600,6 +600,24 @@
             "stochastic gradient boosting",
             "AdaBoost"
           ]
+        },
+        {
+          "id": "boosting-libraries",
+          "title": "XGBoost, LightGBM, CatBoost: различающиеся механизмы",
+          "status": "done",
+          "summary": "Регуляризованный вес листа, gain и направление для пропусков в XGBoost на примере восьми заказов с интерактивными штрафами. Гистограммы, рост по листьям, GOSS и EFB в LightGBM, пошаговое кодирование продавца, ordered boosting и симметричные деревья CatBoost. Подбор параметров, сравнение важностей и API LightGBM и CatBoost на общей валидации.",
+          "concepts": [
+            "XGBoost",
+            "split gain",
+            "leaf weight",
+            "LightGBM",
+            "histogram-based learning",
+            "leaf-wise growth",
+            "GOSS",
+            "EFB",
+            "ordered target statistics",
+            "ordered boosting"
+          ]
         }
       ]
     },
