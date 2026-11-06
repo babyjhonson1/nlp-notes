@@ -582,6 +582,24 @@
             "permutation importance",
             "SHAP"
           ]
+        },
+        {
+          "id": "boosting",
+          "title": "Градиентный бустинг",
+          "status": "done",
+          "summary": "От дерева на остатках к аддитивной модели и псевдоостаткам. Два ручных шага бинарного бустинга на восьми заказах с проигрывателем, раздельным выбором разбиения и поправкой Ньютона в листе. Регрессионные потери, softmax для нескольких классов, shrinkage, ранняя остановка, стохастические подвыборки и связь AdaBoost с экспоненциальной потерей.",
+          "concepts": [
+            "gradient boosting",
+            "additive model",
+            "functional gradient descent",
+            "pseudo-residual",
+            "log-loss",
+            "Newton step",
+            "shrinkage",
+            "early stopping",
+            "stochastic gradient boosting",
+            "AdaBoost"
+          ]
         }
       ]
     },
