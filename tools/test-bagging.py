@@ -97,10 +97,23 @@ assert (F(1, 5) + F(3, 5)) / 2 == F(2, 5)  # условный OOB-прогноз
 assert round(300 * (1 - 1 / 10000) ** 10000) == 110
 assert F(32, 100) - F(20, 100) == F(12, 100)
 assert F(23, 100) - F(20, 100) == F(3, 100)
-assert F(3, 10) + F(2, 10) - F(1, 10) == F(4, 10)  # условные SHAP-вклады
+
+# SHAP для долгой задержки и высокого рейтинга на равномерном фоне.
+background = next(table for table in tables if table[0] == [
+    'Задержка', 'Обычный рейтинг', 'Высокий рейтинг',
+])
+short, long = [[F(c.strip(r'\()')) for c in row[1:]] for row in background[1:]]
+baseline = sum(short + long) / 4
+delay, rating = sum(long) / 2, (short[1] + long[1]) / 2
+prediction = long[1]
+assert (baseline, delay, rating, prediction) == tuple(map(F, ('0.30', '0.52', '0.22', '0.40')))
+delay_shap = ((delay - baseline) + (prediction - rating)) / 2
+rating_shap = ((rating - baseline) + (prediction - delay)) / 2
+assert (delay_shap, rating_shap) == (F('0.20'), F('-0.10'))
+assert baseline + delay_shap + rating_shap == prediction
 
 # Только компиляция примера, без его исполнения и импорта scikit-learn.
 code = re.findall(r'<pre><code>(.*?)</code></pre>', source, re.S)
 for snippet in code:
     compile(unescape(snippet), 'random-forest:sklearn-example', 'exec')
-print('Бэггинг: таблицы, бутстрэп, усреднение, дисперсия, OOB и синтаксис примера — OK. Обучение не запускалось.')
+print('Бэггинг: таблицы, бутстрэп, усреднение, дисперсия, OOB, SHAP и синтаксис примера — OK. Обучение не запускалось.')
